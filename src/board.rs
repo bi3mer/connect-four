@@ -1,4 +1,5 @@
 use std::slice::Iter;
+use rand::{self, Rng};
 use crate::cell::Cell;
 
 pub const U_WIDTH: usize = 7;
@@ -7,7 +8,7 @@ pub const U_HEIGHT: usize = 6;
 pub const F_WIDTH: f32 = 7.0;
 pub const F_HEIGHT: f32 = 6.0;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum BoardState {
     WhiteWon,
     RedWon,
@@ -16,6 +17,7 @@ pub enum BoardState {
 }
 
 
+#[derive(Clone)]
 pub struct Board {
     board: [Cell ; U_WIDTH*U_HEIGHT],
     pub turn: Cell,
@@ -35,12 +37,17 @@ impl Board {
         self.board.iter()
     }
 
-    pub fn len(&self) -> usize {
-        self.board.len()
-    }
+    pub fn get_next_boards(&self) -> Vec<Board> {
+        let mut boards: Vec<Board> = Vec::new();
+        for column in 0..U_WIDTH {
+            let mut new_board = self.clone();
+            
+            if new_board.make_move(column) {
+                boards.push(new_board);
+            }
+        }
 
-    pub fn get(&self, index: usize) -> Cell {
-        self.board[index]
+        boards
     }
 
     pub fn make_move(&mut self, column: usize) -> bool {
@@ -71,4 +78,15 @@ impl Board {
     pub fn update_board_state(&mut self) {
         self.state = BoardState::Active
     }
+
+    pub fn random_ai_turn(&mut self) {
+        let mut boards = self.get_next_boards();
+        let mut rng = rand::thread_rng();
+        let i = rng.gen_range(0..boards.len());
+        
+        std::mem::swap(&mut self.board, &mut (boards[i].board));
+        self.turn = Cell::White;
+        self.update_board_state();
+    }
 }
+

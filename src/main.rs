@@ -56,8 +56,8 @@ async fn main() {
             }
             
             // AI
-            if board.turn == Cell::Red {
-                println!("AI not implemented yet!");
+            if board.turn == Cell::Red && board.state == BoardState::Active {
+                board.random_ai_turn();
             }
 
             // render the board
