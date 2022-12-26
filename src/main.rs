@@ -43,7 +43,8 @@ fn get_mouse_column(pos: (f32, f32), offset: f32, d: f32) -> Result<usize, ()> {
        pos.0 <= offset + d*(F_WIDTH-1.0) + r &&
        pos.1 >= offset - r &&
        pos.1 <= offset + d*(F_HEIGHT-1.0) + r {
-        Ok(1)
+        let x = pos.0 - offset;
+        Ok(((x+r) / d) as usize)
     } else {
         Err(())
     }
@@ -64,39 +65,44 @@ async fn main() {
                 (screen_height() / (F_HEIGHT + 4.0)) as i32
             ) as f32;
             let offset = d * 3.0;
-
-            // highlight the column the player is hovering over
+            
             let mouse_pos = mouse_position();
             let mouse_col = get_mouse_column(mouse_pos, offset, d);
+            let mut ai_should_play = false;
             match mouse_col {
                 Ok(col_index) => {
+                    // highlight the column the player is hovering over
                     draw_rectangle(
                         offset - d/2.0 + d*col_index as f32, 
                         offset - d/2.0, 
                         d, 
                         d*F_HEIGHT, 
                         Color { r: 0.188, g: 0.835, b: 0.784, a: 0.2 });
+
+                    // player input to make a move on the board
+                    if is_mouse_button_pressed(MouseButton::Left) {
+                        let mut row: usize = 0;
+                        let mut index = col_index + row*U_WIDTH;
+                        if board[index] == Cell::Empty {
+                            row += 1;
+                            index = col_index + row*U_WIDTH;
+                            while index < board.len() && board[index] == Cell::Empty {
+                                row += 1;
+                                index = col_index + row*U_WIDTH;
+                            }
+
+                            board[col_index + (row-1)*U_WIDTH] = Cell::White;
+                            ai_should_play = true;
+                        }
+                    }
                 },
                 Err(_) => {},
-            }
-                
-
-            // player input to make a move on the board
-            let mut ai_should_play = false;
-            if is_mouse_button_released(MouseButton::Left) {
-                if mouse_pos.0 >= offset - d/2.0 && 
-                   mouse_pos.0 <= F_WIDTH * d + offset + d/2.0 && 
-                   mouse_pos.1 >= offset - d/2.0 && 
-                   mouse_pos.1 <= F_WIDTH * d + offset + d/2.0 {
-                    ai_should_play = true;
-                }
             }
             
             // AI
             if ai_should_play {
                 println!("AI not implemented yet!");
             }
-
 
             // render the board
             for (i, cell) in board.iter().enumerate() {
@@ -108,13 +114,13 @@ async fn main() {
                     d/2.0, 
                     cell.to_color());
 
-                // draw_text(
-                //     format!("{}", i).as_str(),
-                //     x*d + offset, 
-                //     y*d + offset,
-                //     12.0,
-                //     WHITE
-                // );
+                draw_text(
+                    format!("{}", i).as_str(),
+                    x*d + offset, 
+                    y*d + offset,
+                    12.0,
+                    BLUE
+                );
             }
             
             // render the result
