@@ -75,15 +75,68 @@ impl Board {
         }
     }
 
+    fn check_indices(&mut self, len: usize, i_1: usize, i_2: usize, i_3: usize, i_4: usize) {
+        if i_4 < len && i_3 < len && i_2 < len && i_1 < len && 
+            self.board[i_1] != Cell::Empty &&
+            self.board[i_1] == self.board[i_2] &&
+            self.board[i_1] == self.board[i_3] &&
+            self.board[i_1] == self.board[i_4] 
+            {
+            if self.board[i_1] == Cell::Red {
+                self.state = BoardState::RedWon;
+            } else {
+                self.state = BoardState::WhiteWon;
+            }
+        }
+    }
+
     pub fn update_board_state(&mut self) {
-        self.state = BoardState::Active
+        let len = self.board.len();
+        for row in 0..U_WIDTH {
+            for col in 0..U_HEIGHT {
+                // check to the right
+                let mut i_1 = row + col * U_WIDTH;
+                let mut i_2 = row + 1 + col * U_WIDTH;
+                let mut i_3 = row + 2 + col * U_WIDTH;
+                let mut i_4 = row + 3 + col * U_WIDTH;
+                self.check_indices(len, i_1, i_2, i_3, i_4);
+
+                // check diagonal down and to the right
+                i_1 = row + col * U_WIDTH;
+                i_2 = row + 1 + (col + 1) * U_WIDTH;
+                i_3 = row + 2 + (col + 2) * U_WIDTH;
+                i_4 = row + 3 + (col + 3) * U_WIDTH;
+                self.check_indices(len, i_1, i_2, i_3, i_4);
+
+                // check diagonal down and to the left
+                if row >= 3 {
+                    i_1 = row + col * U_WIDTH;
+                    i_2 = row - 1 + (col + 1) * U_WIDTH;
+                    i_3 = row - 2 + (col + 2) * U_WIDTH;
+                    i_4 = row - 3 + (col + 3) * U_WIDTH;
+                    self.check_indices(len, i_1, i_2, i_3, i_4);
+                }
+
+                // check straight down
+                i_1 = row + col * U_WIDTH;
+                i_2 = row + (col + 1) * U_WIDTH;
+                i_3 = row + (col + 2) * U_WIDTH;
+                i_4 = row + (col + 3) * U_WIDTH;
+                self.check_indices(len, i_1, i_2, i_3, i_4);
+
+            }
+
+            if self.state != BoardState::Active {
+                break;
+            }
+        }
     }
 
     pub fn random_ai_turn(&mut self) {
         let mut boards = self.get_next_boards();
         let mut rng = rand::thread_rng();
         let i = rng.gen_range(0..boards.len());
-        
+
         std::mem::swap(&mut self.board, &mut (boards[i].board));
         self.turn = Cell::White;
         self.update_board_state();

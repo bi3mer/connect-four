@@ -25,16 +25,16 @@ async fn main() {
     let mut board = Board::new();
 
     loop {
-        if board.state == BoardState::Active {
-            clear_background(BLACK);
+        clear_background(BLACK);
 
-            // get diameter of board based on current screen size
-            let d = min(
-                (screen_width() / (F_WIDTH + 4.0)) as i32, 
-                (screen_height() / (F_HEIGHT + 4.0)) as i32
-            ) as f32;
-            let offset = d * 3.0;
-            
+        // get diameter of board based on current screen size
+        let d = min(
+            (screen_width() / (F_WIDTH + 4.0)) as i32, 
+            (screen_height() / (F_HEIGHT + 4.0)) as i32
+        ) as f32;
+        let offset = d * 3.0;
+
+        if board.state == BoardState::Active {
             let mouse_pos = mouse_position();
             let mouse_col = get_mouse_column(mouse_pos, offset, d);
             match mouse_col {
@@ -69,33 +69,24 @@ async fn main() {
                     y*d + offset, 
                     d/2.0, 
                     cell.to_color());
-
-                draw_text(
-                    format!("{}", i).as_str(),
-                    x*d + offset, 
-                    y*d + offset,
-                    12.0,
-                    BLUE
-                );
             }
             
             // render the result if the game is over
             board.update_board_state();
-            if board.state != BoardState::Active {
-                let text = match board.state {
-                    BoardState::WhiteWon => "You won!\nPress 'r' to play again.",
-                    BoardState::RedWon => "The AI won!\nPress 'r' to play again.",
-                    BoardState::Draw => "Draw!\nPress 'r' to play again.",
-                    BoardState::Active => "GameState should not be 'Active' if the game is over. Contact admin."
-                };
+        } else {
+            let text = match board.state {
+                BoardState::WhiteWon => "You won!\nPress 'r' to play again.",
+                BoardState::RedWon => "The AI won!\nPress 'r' to play again.",
+                BoardState::Draw => "Draw!\nPress 'r' to play again.",
+                BoardState::Active => "GameState should not be 'Active' if the game is over. Contact admin."
+            };
 
-                draw_text(
-                    text, 
-                    screen_width() / 2.0, 
-                    screen_height() - d, 
-                    d-2.0, 
-                    WHITE);
-            }
+            draw_text(
+                text, 
+                offset, 
+                screen_height() - d, 
+                20.0, 
+                WHITE);
         }
 
         next_frame().await
