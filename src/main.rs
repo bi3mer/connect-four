@@ -7,16 +7,29 @@ use cell::Cell;
 mod board;
 use board::*;
 
-fn get_mouse_column(pos: (f32, f32), offset: f32, d: f32) -> Result<usize, ()> {
+enum Scene {
+    Menu,
+    Game
+}
+
+enum AI {
+    Beginner,
+    Easy,
+    Medium,
+    Hard,
+    Impossible
+}
+
+fn get_mouse_column(pos: (f32, f32), offset: f32, d: f32) -> Option<usize> {
     let r = d/2.0;
     if pos.0 >= offset - r && 
        pos.0 <= offset + d*(F_WIDTH-1.0) + r &&
        pos.1 >= offset - r &&
        pos.1 <= offset + d*(F_HEIGHT-1.0) + r {
         let x = pos.0 - offset;
-        Ok(((x+r) / d) as usize)
+        Some(((x+r) / d) as usize)
     } else {
-        Err(())
+        None
     }
 }
 
@@ -38,7 +51,7 @@ async fn main() {
             let mouse_pos = mouse_position();
             let mouse_col = get_mouse_column(mouse_pos, offset, d);
             match mouse_col {
-                Ok(col_index) => {
+                Some(col_index) => {
                     // highlight the column the player is hovering over
                     draw_rectangle(
                         offset - d/2.0 + d*col_index as f32, 
@@ -52,31 +65,21 @@ async fn main() {
                         board.make_move(col_index);
                     }
                 },
-                Err(_) => {},
+                None => {},
             }
             
-            // AI
+            // AI turn if possible
             if board.turn == Cell::Red && board.state == BoardState::Active {
-                board.random_ai_turn();
-            }
-
-            // render the board
-            for (i, cell) in board.iter().enumerate() {
-                let x = (i % U_WIDTH) as f32;
-                let y = (i / U_WIDTH) as f32;
-                draw_circle(
-                    x*d + offset, 
-                    y*d + offset, 
-                    d/2.0, 
-                    cell.to_color());
+                // board.random_ai_turn();
+                board.minimax(5);
             }
             
             // render the result if the game is over
             board.update_board_state();
         } else {
             let text = match board.state {
-                BoardState::WhiteWon => "You won!\nPress 'r' to play again.",
-                BoardState::RedWon => "The AI won!\nPress 'r' to play again.",
+                BoardState::WhiteWon => "You won! Press 'r' to play again.",
+                BoardState::RedWon => "The AI won! Press 'r' to play again.",
                 BoardState::Draw => "Draw!\nPress 'r' to play again.",
                 BoardState::Active => "GameState should not be 'Active' if the game is over. Contact admin."
             };
@@ -87,6 +90,17 @@ async fn main() {
                 screen_height() - d, 
                 20.0, 
                 WHITE);
+        }
+
+        // render the board
+        for (i, cell) in board.iter().enumerate() {
+            let x = (i % U_WIDTH) as f32;
+            let y = (i / U_WIDTH) as f32;
+            draw_circle(
+                x*d + offset, 
+                y*d + offset, 
+                d/2.0, 
+                cell.to_color());
         }
 
         next_frame().await
