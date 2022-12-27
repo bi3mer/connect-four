@@ -59,7 +59,19 @@ pub fn update(board: &mut super::Board, ai: &super::AI) -> bool {
         }
         
         // render the result if the game is over
-        board.update_board_state();
+        println!("State: {}", board.state as u16);
+        match board.update_board_state() {
+            Some(indices) => {
+                let cell = if board.get(indices.0) == Cell::White { Cell::WhiteVictory } else { Cell::RedVictory };
+                println!("===> {},{},{},{}", indices.0, indices.1, indices.2, indices.3);
+                board.set(indices.0, cell);
+                board.set(indices.1, cell);
+                board.set(indices.2, cell);
+                board.set(indices.3, cell);
+
+            },
+            None => { println!("No update!"); },
+        }
 
         draw_text(
             "Press 'r' to play again. Press 'q' to quit.", 
@@ -93,6 +105,8 @@ pub fn update(board: &mut super::Board, ai: &super::AI) -> bool {
             d/2.0, 
             cell.to_color()
         );
+
+        draw_text(format!("{}", i).as_str(), x*d+offset, y*d+offset, 20., BLACK);
     }
 
     if is_key_pressed(KeyCode::R) {
