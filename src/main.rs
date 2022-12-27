@@ -1,7 +1,6 @@
-use std::cmp::min;
-
 use macroquad::prelude::*;
 mod cell;
+mod ui;
 
 mod board;
 use board::*;
@@ -15,6 +14,7 @@ enum Scene {
     Game
 }
 
+#[derive(PartialEq)]
 pub enum AI {
     Beginner,
     Easy,
@@ -27,14 +27,14 @@ pub enum AI {
 async fn main() {
     let mut board = Board::new();
     let mut scene = Scene::Menu;
-    let mut ai = AI::Medium;
+    let mut ai = AI::Easy;
 
     loop {
         clear_background(BLACK);
 
         let switch = match scene {
             Scene::Menu => menu_scene::update(&mut ai),
-            Scene::Game => game_scene::update(&mut board),
+            Scene::Game => game_scene::update(&mut board, &ai),
         };
 
         if switch {

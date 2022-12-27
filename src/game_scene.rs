@@ -18,7 +18,9 @@ fn get_mouse_column(pos: (f32, f32), offset: f32, d: f32) -> Option<usize> {
     }
 }
 
-pub fn update(board: &mut super::Board) -> bool {
+pub fn update(board: &mut super::Board, ai: &super::AI) -> bool {
+    let mut change_scene = false;
+
     // get diameter of board based on current screen size
     let d = min(
         (screen_width() / (F_WIDTH + 4.0)) as i32, 
@@ -29,37 +31,47 @@ pub fn update(board: &mut super::Board) -> bool {
     if board.state == BoardState::Active {
         let mouse_pos = mouse_position();
         let mouse_col = get_mouse_column(mouse_pos, offset, d);
-        match mouse_col {
-            Some(col_index) => {
-                // highlight the column the player is hovering over
-                draw_rectangle(
-                    offset - d/2.0 + d*col_index as f32, 
-                    offset - d/2.0, 
-                    d, 
-                    d*F_HEIGHT, 
-                    Color { r: 0.188, g: 0.835, b: 0.784, a: 0.2 });
+        if let Some(col_index) = mouse_col {
+            // highlight the column the player is hovering over
+            draw_rectangle(
+                offset - d/2.0 + d*col_index as f32, 
+                offset - d/2.0, 
+                d, 
+                d*F_HEIGHT, 
+                Color { r: 0.188, g: 0.835, b: 0.784, a: 0.2 });
 
-                // player input to make a move on the board
-                if is_mouse_button_pressed(MouseButton::Left) {
-                    board.make_move(col_index);
-                }
-            },
-            None => {},
+            // player input to make a move on the board
+            if is_mouse_button_pressed(MouseButton::Left) {
+                board.make_move(col_index);
+            }
         }
         
         // AI turn if possible
         if board.turn == Cell::Red && board.state == BoardState::Active {
-            // board.random_ai_turn();
-            board.minimax(5);
+            match ai {
+                crate::AI::Beginner => board.random_ai_turn(),
+                crate::AI::Easy => board.minimax(2, &ai),
+                crate::AI::Medium => board.minimax(4, &ai),
+                crate::AI::Hard => board.minimax(6, &ai),
+                crate::AI::Impossible => todo!(),
+            }
+            
         }
         
         // render the result if the game is over
         board.update_board_state();
+
+        draw_text(
+            "Press 'r' to play again. Press 'q' to quit.", 
+            offset, 
+            screen_height() - d, 
+            20.0, 
+            WHITE);
     } else {
         let text = match board.state {
-            BoardState::WhiteWon => "You won! Press 'r' to play again.",
-            BoardState::RedWon => "The AI won! Press 'r' to play again.",
-            BoardState::Draw => "Draw!\nPress 'r' to play again.",
+            BoardState::WhiteWon => "You won! Press 'r' to play again. Press 'q' to quit.",
+            BoardState::RedWon => "The AI won! Press 'r' to play again. Press 'q' to quit.",
+            BoardState::Draw => "Draw!\nPress 'r' to play again. Press 'q' to quit.",
             BoardState::Active => "GameState should not be 'Active' if the game is over. Contact admin."
         };
 
@@ -79,8 +91,16 @@ pub fn update(board: &mut super::Board) -> bool {
             x*d + offset, 
             y*d + offset, 
             d/2.0, 
-            cell.to_color());
+            cell.to_color()
+        );
     }
 
-    false
+    if is_key_pressed(KeyCode::R) {
+        board.reset();
+    } else if is_key_pressed(KeyCode::Q) {
+        board.reset();
+        change_scene = true;
+    }
+
+    change_scene
 }
