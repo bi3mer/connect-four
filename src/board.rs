@@ -84,7 +84,6 @@ impl Board {
             self.board[i_1] == self.board[i_3] &&
             self.board[i_1] == self.board[i_4] {
             
-            println!("Game over! {},{},{},{}", i_1, i_2, i_3, i_4);
             if self.board[i_1] == Cell::Red {
                 self.state = BoardState::RedWon;
             } else {
@@ -138,7 +137,6 @@ impl Board {
             }
 
             if self.state != BoardState::Active {
-                println!("Game over!");
                 break;
             }
         }
