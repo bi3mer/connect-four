@@ -1,4 +1,5 @@
 use std::{slice::Iter};
+use macroquad::prelude::Vec4;
 use rand::{self, Rng, rngs::SmallRng, SeedableRng};
 use crate::cell::Cell;
 
@@ -123,8 +124,6 @@ impl Board {
                         row + 3 + (col + 3) * U_WIDTH);
                 }
 
-                
-
                 // check diagonal down and to the left
                 if row >= 3 {
                     self.check_indices(
@@ -184,46 +183,33 @@ impl Board {
 
         let boards = self.get_next_boards();
         let mut score: f32 = 0.0;
-        if self.turn == Cell::White {
-            // minimize, players turn
-            for b in boards.iter() {
-                score += (1.0/(boards.len() as f32)) * b._minimax(depth-1);
-                // score = score.min(b._minimax(depth-1));
-            }
-        } else {
-            // maximize, ai's turn
-            for b in boards.iter() {
-                score += (1.0/(boards.len() as f32)) * b._minimax(depth-1);
-                // score = score.max(b._minimax(depth-1));
-            }
+
+        for b in boards.iter() {
+            score += (1.0/(boards.len() as f32)) * b._minimax(depth-1);
         }
 
         score
     }
-
      
     pub fn minimax(&mut self, depth: u16, ai: &super::AI) {
         let mut rng = SmallRng::from_entropy();
         let mut boards = self.get_next_boards();
         let mut scores = Vec::new();
-        let mut total_score = 0.;
         for b in boards.iter() {
             let mut s = b._minimax(depth);
-            if *ai == super::AI::Hard {
+            if *ai != super::AI::Hard {
                 s += rng.gen::<f32>();
             }
 
             scores.push(s);
-            total_score += s;
         }
 
         let mut best_score = -10000.;
         let mut index = 0;
         for (i, s) in scores.iter().enumerate() {
-            let score = if *ai == super::AI::Hard { *s } else { s / total_score };
-            if score > best_score {
+            if *s > best_score {
                 index = i;
-                best_score = score;
+                best_score = *s;
             }
         }
 

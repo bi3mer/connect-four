@@ -4,7 +4,9 @@ use macroquad::prelude::{Color, WHITE, RED};
 pub enum Cell {
     Empty,
     White,
-    Red
+    Red,
+    RedVictory,
+    WhiteVictory
 }
 
 impl Cell {
@@ -13,6 +15,8 @@ impl Cell {
             Cell::Empty => Color::new(0.75, 0.0, 0.05, 0.2),
             Cell::White => WHITE,
             Cell::Red => RED,
+            Cell::WhiteVictory => Color::new(0.8, 0.8, 0.8, 0.9),
+            Cell::RedVictory => Color::new(1.0, 0.3, 0.3, 0.5),
         }
     }
 }
