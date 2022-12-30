@@ -25,6 +25,7 @@ pub enum AIType {
     Impossible
 }
 
+
 #[macroquad::main("Connect-Four")]
 async fn main() {
     let mut board = Board::new();
