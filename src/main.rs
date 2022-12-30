@@ -8,6 +8,8 @@ use board::*;
 mod game_scene;
 mod menu_scene;
 
+mod ai;
+
 #[derive(PartialEq)]
 enum Scene {
     Menu,
@@ -15,7 +17,7 @@ enum Scene {
 }
 
 #[derive(PartialEq)]
-pub enum AI {
+pub enum AIType {
     Beginner,
     Easy,
     Medium,
@@ -27,7 +29,7 @@ pub enum AI {
 async fn main() {
     let mut board = Board::new();
     let mut scene = Scene::Menu;
-    let mut ai = AI::Easy;
+    let mut ai = AIType::Easy;
 
     loop {
         clear_background(BLACK);

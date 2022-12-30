@@ -1,8 +1,11 @@
 use macroquad::prelude::*;
 use std::cmp::min;
 
+use crate::ai;
+
 use super::cell::Cell;
 use super::board::*;
+
 
 
 fn get_mouse_column(pos: (f32, f32), offset: f32, d: f32) -> Option<usize> {
@@ -18,7 +21,7 @@ fn get_mouse_column(pos: (f32, f32), offset: f32, d: f32) -> Option<usize> {
     }
 }
 
-pub fn update(board: &mut super::Board, ai: &super::AI) -> bool {
+pub fn update(board: &mut super::Board, ai: &super::AIType) -> bool {
     let mut change_scene = false;
 
     // get diameter of board based on current screen size
@@ -49,28 +52,22 @@ pub fn update(board: &mut super::Board, ai: &super::AI) -> bool {
         // AI turn if possible
         if board.turn == Cell::Red && board.state == BoardState::Active {
             match ai {
-                crate::AI::Beginner => board.random_ai_turn(),
-                crate::AI::Easy => board.minimax(2, &ai),
-                crate::AI::Medium => board.minimax(4, &ai),
-                crate::AI::Hard => board.minimax(6, &ai),
-                crate::AI::Impossible => todo!(),
+                crate::AIType::Beginner => ai::random::make_move(board),
+                crate::AIType::Easy => ai::expectiminimax::make_move(board, 2, ai),
+                crate::AIType::Medium => ai::expectiminimax::make_move(board, 4, ai),
+                crate::AIType::Hard => ai::expectiminimax::make_move(board, 6, ai),
+                crate::AIType::Impossible => todo!(),
             }
             
         }
         
         // render the result if the game is over
-        println!("State: {}", board.state as u16);
-        match board.update_board_state() {
-            Some(indices) => {
-                let cell = if board.get(indices.0) == Cell::White { Cell::WhiteVictory } else { Cell::RedVictory };
-                println!("===> {},{},{},{}", indices.0, indices.1, indices.2, indices.3);
-                board.set(indices.0, cell);
-                board.set(indices.1, cell);
-                board.set(indices.2, cell);
-                board.set(indices.3, cell);
-
-            },
-            None => { println!("No update!"); },
+        if let Some(indices) = board.update_board_state() {
+            let cell = if board.board[indices.0] == Cell::White { Cell::WhiteVictory } else { Cell::RedVictory };
+            board.board[indices.0] = cell;
+            board.board[indices.1] = cell;
+            board.board[indices.2] = cell;
+            board.board[indices.3] = cell;
         }
 
         draw_text(

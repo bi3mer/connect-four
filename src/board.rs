@@ -1,5 +1,4 @@
 use std::{slice::Iter};
-use rand::{self, Rng, rngs::SmallRng, SeedableRng};
 use crate::cell::Cell;
 
 pub const U_WIDTH: usize = 7;
@@ -19,7 +18,7 @@ pub enum BoardState {
 
 #[derive(Clone)]
 pub struct Board {
-    board: [Cell ; U_WIDTH*U_HEIGHT],
+    pub board: [Cell ; U_WIDTH*U_HEIGHT],
     pub turn: Cell,
     pub state: BoardState
 }
@@ -37,14 +36,6 @@ impl Board {
         self.turn = Cell::White;
         self.state = BoardState::Active;
         self.board.iter_mut().for_each(|e| { *e = Cell::Empty });
-    }
-
-    pub fn get(&self, index: usize) -> Cell {
-        self.board[index]
-    }
-
-    pub fn set(&mut self, index: usize, val: Cell) {
-        self.board[index] = val;
     }
 
     pub fn iter(&self) -> Iter<'_, Cell> {
@@ -149,7 +140,7 @@ impl Board {
                     }
                 }
 
-                // check straight down
+                // check strai_typeght down
                 i_2 = row + (col + 1) * U_WIDTH; 
                 i_3 = row + (col + 2) * U_WIDTH; 
                 i_4 = row + (col + 3) * U_WIDTH;
@@ -170,75 +161,5 @@ impl Board {
 
         None
     }
-
-    //////////////////////////// AI: Random ////////////////////////////
-    pub fn random_ai_turn(&mut self) {
-        let mut boards = self.get_next_boards();
-        let mut rng = rand::thread_rng();
-        let i = rng.gen_range(0..boards.len());
-
-        self.state = boards[i].state;
-        std::mem::swap(&mut self.board, &mut (boards[i].board));
-        self.turn = Cell::White;
-    }
-
-    //////////////////////////// AI: Minimax ////////////////////////////
-    fn _minimax(&self, depth: u16) -> f32 {
-        if self.state != BoardState::Active {
-            if self.state == BoardState::Draw {
-                return 1.0;
-            } else if self.state == BoardState::RedWon {
-                return 2.0;
-            } else {
-                return -2.0;
-            }
-        }
-
-        if depth == 0 {
-            return 1.0;
-        }
-
-        let boards = self.get_next_boards();
-        let mut score = 0.0;
-
-        for b in boards.iter() {
-            score += (1.0/(boards.len() as f32)) * b._minimax(depth-1);
-        }
-
-        score
-    }
-     
-    pub fn minimax(&mut self, depth: u16, ai: &super::AI) {
-        let mut rng = SmallRng::from_entropy();
-        let mut boards = self.get_next_boards();
-        let mut scores = Vec::new();
-        for b in boards.iter() {
-            let mut s = b._minimax(depth);
-            if *ai != super::AI::Hard {
-                s += rng.gen::<f32>();
-            }
-
-            scores.push(s);
-        }
-
-        let mut best_score = -10000.;
-        let mut index = 0;
-        for (i, s) in scores.iter().enumerate() {
-            if *s > best_score {
-                index = i;
-                best_score = *s;
-            }
-        }
-
-        // update the board
-        std::mem::swap(&mut self.board, &mut (boards[index].board));
-        self.turn = Cell::White;
-        self.state = boards[index].state;
-    }
-
-    //////////////////////////// AI: AB Pruning ////////////////////////////
-    
-
-    //////////////////////////// AI: MCTS ////////////////////////////
 }
 
