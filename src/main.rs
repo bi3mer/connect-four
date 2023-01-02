@@ -28,7 +28,7 @@ async fn main() {
     
     // let mut board = Board::new();
     let mut menu_scene = MenuScene::new();
-    let mut current_scene = &menu_scene as &mut dyn Scene;
+    let mut current_scene: &mut dyn Scene = &mut menu_scene;
 
     loop {
         clear_background(BLACK);

@@ -5,18 +5,19 @@ use crate::ui::Button;
 
 use super::scene_id::SceneId::{self, *};
 
-pub struct MenuScene<'a> {
-    play_button: &'a Button,
-    beginner_button: &'a Button,
-    easy_button: &'a Button,
-    medium_button: &'a Button,
-    hard_button: &'a Button,
-    impossible_button: &'a Button,
+pub struct MenuScene {
+    play_button: Button,
+    beginner_button: Button,
+    easy_button: Button,
+    medium_button: Button,
+    hard_button: Button,
+    impossible_button: Button,
 }
 
-impl<'a> MenuScene<'a> {
+impl MenuScene {
     pub fn new() -> Self {
-        let play_button = Button::new()
+        let mut play_button = Button::new();
+        play_button
             .dimensions(80., 50.)
             .color(GRAY)
             .hover_color(WHITE)
@@ -25,41 +26,45 @@ impl<'a> MenuScene<'a> {
             .font_color(WHITE)
             .is_active(true);
 
-        let beginner_button = Button::new()
+        let mut beginner_button = Button::new();
+        beginner_button
             .dimensions(70., 30.)
             .hover_color(BLUE)
             .text(" Beginner".to_string())
             .font_size(15.)
             .font_color(WHITE);
 
-        let easy_button = Button::new()
+        let mut easy_button = Button::new();
+        easy_button
             .dimensions(40., 30.)
             .hover_color(BLUE)
             .text(" Easy".to_string())
             .font_size(15.)
             .font_color(WHITE);
 
-        let medium_button = Button::new()
+        let mut medium_button = Button::new();
+        medium_button
             .dimensions(60., 30.)
             .hover_color(BLUE)
             .text(" Medium".to_string())
             .font_size(15.)
             .font_color(WHITE);
 
-        let hard_button = Button::new()
+        let mut hard_button = Button::new();
+        hard_button
             .dimensions(40., 30.)
             .hover_color(BLUE)
             .text(" Hard".to_string())
             .font_size(15.)
             .font_color(WHITE);
 
-        let impossible_button = Button::new()
+        let mut impossible_button = Button::new();
+        impossible_button
             .dimensions(80., 30.)
             .hover_color(BLUE)
             .text(" Impossible".to_string())
             .font_size(15.)
             .font_color(WHITE);
-
             
         MenuScene {
             play_button,
@@ -72,8 +77,8 @@ impl<'a> MenuScene<'a> {
     }
 }
 
-impl Scene for MenuScene<'_> {
-    fn update(&mut self, ai: &AIType) -> SceneId {
+impl Scene for MenuScene {
+    fn update(&mut self, ai: &mut AIType) -> SceneId {
         let w = screen_width();
         let h = screen_height();
 
@@ -105,7 +110,7 @@ impl Scene for MenuScene<'_> {
         }
 
         if self.easy_button
-            .pos(button_x, button_height)
+            .pos(button_x + 90., button_height)
             .color(if *ai == Easy { RED } else { GRAY })
             .is_active(*ai != Easy)
             .draw()
