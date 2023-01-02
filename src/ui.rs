@@ -1,6 +1,5 @@
 use macroquad::prelude::*;
 
-
 pub struct Button {
     x: f32,
     y: f32,
@@ -84,8 +83,10 @@ impl Button {
             p.1 <= self.y+self.h;
 
         let rec_color = 
-            if self.hover_color.is_some() && mouse_in_bounds { self.hover_color.unwrap() } 
-            else { self.color };
+            if self.hover_color.is_some() && mouse_in_bounds 
+                { self.hover_color.unwrap() } 
+            else 
+                { self.color };
 
         draw_rectangle(
             self.x,
@@ -105,7 +106,8 @@ impl Button {
             ); 
         }
 
-        self.clicked = self.is_active && 
+        self.clicked = 
+            self.is_active && 
             mouse_in_bounds && 
             is_mouse_button_pressed(MouseButton::Left);
 

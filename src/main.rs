@@ -3,18 +3,14 @@ mod cell;
 mod ui;
 
 mod board;
-use board::*;
 
-mod game_scene;
-mod menu_scene;
+mod scene;
+use scene::{scene_trait::Scene, menu_scene::MenuScene};
+
+use crate::scene::scene_id::SceneId::*;
 
 mod ai;
 
-#[derive(PartialEq)]
-enum Scene {
-    Menu,
-    Game
-}
 
 #[derive(PartialEq)]
 pub enum AIType {
@@ -25,23 +21,28 @@ pub enum AIType {
     Impossible
 }
 
-
 #[macroquad::main("Connect-Four")]
 async fn main() {
-    let mut board = Board::new();
-    let mut scene = Scene::Menu;
+    let mut scene = Menu;
     let mut ai = AIType::Easy;
+    
+    // let mut board = Board::new();
+    let mut menu_scene = MenuScene::new();
+    let mut current_scene = &menu_scene as &mut dyn Scene;
 
     loop {
         clear_background(BLACK);
 
-        let switch = match scene {
-            Scene::Menu => menu_scene::update(&mut ai),
-            Scene::Game => game_scene::update(&mut board, &ai),
-        };
-
-        if switch {
-            scene = if scene == Scene::Menu { Scene::Game } else { Scene::Menu };
+        let new_scene = current_scene.update(&mut ai);
+        if new_scene != scene {
+            println!("switch!");
+            if scene == Game {
+                scene = Menu;
+                // current_scene = &menu_scene as &mut dyn Scene;
+            } else {
+                scene = Menu;
+                println!("not implemented!");
+            }
         }
 
         next_frame().await
