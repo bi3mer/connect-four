@@ -2,7 +2,7 @@ use rand::rngs::SmallRng;
 use rand::SeedableRng;
 use rand::Rng;
 
-use crate::board::{Board, BoardState};
+use crate::board::Board;
 use crate::cell::Cell;
 use crate::AIType;
 

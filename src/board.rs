@@ -1,4 +1,3 @@
-use std::{slice::Iter};
 use crate::cell::Cell;
 
 pub const S_WIDTH: usize = 7;
@@ -10,13 +9,7 @@ pub const U_HEIGHT: u8 = 6;
 pub const F_WIDTH: f32 = 7.0;
 pub const F_HEIGHT: f32 = 6.0;
 
-#[derive(PartialEq, Copy, Clone)]
-pub enum BoardState {
-    WhiteWon = 0,
-    RedWon,
-    Draw,
-    Active
-}
+pub const DIRECTIONS: [u8; 4] = [1, 7, 6, 8];
 
 /* 
 https://github.com/denkspuren/BitboardC4/blob/master/BitboardDesign.md
@@ -37,26 +30,23 @@ Using above as basis for this implementation.
 pub struct Board {
     pub bit_board: [u64; 2],
     height: [u8; 7],
-    counter: u8,
-    pub state: BoardState
+    counter: u8
 }
 
 impl Board {
     pub fn new() -> Board {
         Board { 
             bit_board: [0; 2],
-            height: [0, 7, 15, 24, 30, 35, 42],
-            counter: 0,
-            state: BoardState::Active 
+            height: [0, 7, 14, 21, 28, 35, 42],
+            counter: 0
         }
     }
 
     pub fn reset(&mut self) {
         self.bit_board[0] = 0;
         self.bit_board[1] = 0;
-        self.height = [0, 7, 15, 24, 30, 35, 42];
+        self.height = [0, 7, 14, 21, 28, 35, 42];
         self.counter = 0;
-        self.state = BoardState::Active;
     }
 
     pub fn get_next_boards(&self) -> Vec<Board> {
@@ -71,9 +61,13 @@ impl Board {
         boards
     }
 
+    pub fn is_white_turn(&self) -> bool{
+        self.counter % 2 == 0
+    }
+
     pub fn make_move(&mut self, col: usize) -> bool {
         let h = self.height[col];
-        if h >= 5 + (col as u8) *U_WIDTH {
+        if h >= 6 + (col as u8) * U_WIDTH {
             return false;
         }
 
@@ -85,14 +79,35 @@ impl Board {
         true
     }
 
+    // https://github.com/denkspuren/BitboardC4/blob/master/BitboardDesign.md#are-there-four-in-a-row
     pub fn is_game_over(&mut self, bit_board: u64) -> bool {
-        if bit_board & bit_board >> 6 & bit_board >> 12 & bit_board >> 18 != 0 { return true; } // diagonal \
-        if bit_board & bit_board >> 8 & bit_board >> 16 & bit_board >> 24 != 0 { return true; } // diagonal /
-        if bit_board & bit_board >> 7 & bit_board >> 14 & bit_board >> 21 != 0 { return true; } // horizontal
-        if bit_board & bit_board >> 1 & bit_board >>  2 & bit_board >>  3 != 0 { return true; } // vertical
-        
+        let mut bb: u64;
+        for d in DIRECTIONS.iter() {
+            bb = bit_board & (bit_board >> d);
+            if (bb & (bb >> (2*d))) != 0 {
+                return true;
+            }
+        }
+
         false 
     }
-}
 
-// TODO: implement iterator trait
+    // refer to board above for the for magic numbers to make sense
+    pub fn get_cells(&self) -> [Cell; S_WIDTH*S_HEIGHT] {
+        let mut board = [Cell::Empty; S_WIDTH*S_HEIGHT];
+        let mut i = 0;
+        for row in (0..6).rev() {
+            for col in 0..S_WIDTH {
+                let index = row + col*S_WIDTH;
+                if self.bit_board[0] & (1 << index) != 0 {
+                    board[i] = Cell::White;
+                } else if self.bit_board[1] & (1 << index) != 0 {
+                    board[i] = Cell::Red;
+                } 
+                i += 1;
+            }
+        }
+        
+        board
+    }
+}

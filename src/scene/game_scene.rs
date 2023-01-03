@@ -7,15 +7,25 @@ use crate::{ai, board::*, cell::Cell};
 use super::scene_id::SceneId::{self, *};
 use super::scene_trait::Scene;
 
+#[derive(PartialEq)]
+pub enum State {
+    Active,
+    Draw,
+    RedWon,
+    WhiteWon,
+}
 
 pub struct GameScene {
-    board: Board
+    board: Board,
+    state: State
+
 }
 
 impl GameScene {
     pub fn new() -> Self {
         GameScene {
-            board: Board::new()
+            board: Board::new(),
+            state: State::Active
         }
     }
 
@@ -31,11 +41,6 @@ impl GameScene {
             None
         }
     }
-
-    pub fn test(&mut self) {
-        println!("{:#064b}", self.board.bit_board[0]);
-        println!("{:#064b}", self.board.bit_board[1]);
-    }
 }
 
 impl Scene for GameScene {
@@ -49,7 +54,7 @@ impl Scene for GameScene {
         ) as f32;
         let offset = d * 3.0;
 
-        if self.board.state == BoardState::Active {
+        if self.state == State::Active {
             let mouse_pos = mouse_position();
             let mouse_col = self.get_mouse_column(mouse_pos, offset, d);
             if let Some(col_index) = mouse_col {
@@ -66,26 +71,25 @@ impl Scene for GameScene {
                     self.board.make_move(col_index);
                 }
             }
-            
-            // AI turn if possible
-            // if self.board.turn == Cell::Red && self.board.state == BoardState::Active {
-            //     match ai {
-            //        Beginner => ai::random::make_move(&mut self.board),
-            //        Easy => ai::expectiminimax::make_move(&mut self.board, 2, ai),
-            //        Medium => ai::expectiminimax::make_move(&mut self.board, 4, ai),
-            //        Hard => ai::expectiminimax::make_move(&mut self.board, 6, ai),
-            //        Impossible => todo!(),
-            //     }
-            // }
-            
-            // render the result if the game is over
-            if let Some(indices) = self.board.update_board_state() {
-                // let cell = if self.board.board[indices.0] == Cell::White { Cell::WhiteVictory } else { Cell::RedVictory };
-                // self.board.board[indices.0] = cell;
-                // self.board.board[indices.1] = cell;
-                // self.board.board[indices.2] = cell;
-                // self.board.board[indices.3] = cell;
+
+            if self.board.is_game_over(self.board.bit_board[0]) {
+                self.state = State::WhiteWon;
+            } else if self.state == State::Active && !self.board.is_white_turn() {
+                // AI turn to make a move
+                match ai {
+                   Beginner => ai::random::make_move(&mut self.board),
+                   Easy => ai::expectiminimax::make_move(&mut self.board, 2, ai),
+                   Medium => ai::expectiminimax::make_move(&mut self.board, 4, ai),
+                   Hard => ai::expectiminimax::make_move(&mut self.board, 6, ai),
+                   Impossible => todo!(),
+                }
+
+                if self.board.is_game_over(self.board.bit_board[1]) {
+                    self.state = State::RedWon;
+                }
             }
+            
+            // TODO: draw not handled!
 
             draw_text(
                 "Press 'r' to play again. Press 'q' to quit.", 
@@ -94,11 +98,11 @@ impl Scene for GameScene {
                 20.0, 
                 WHITE);
         } else {
-            let text = match self.board.state {
-                BoardState::WhiteWon => "You won! Press 'r' to play again. Press 'q' to quit.",
-                BoardState::RedWon => "The AI won! Press 'r' to play again. Press 'q' to quit.",
-                BoardState::Draw => "Draw!\nPress 'r' to play again. Press 'q' to quit.",
-                BoardState::Active => "GameState should not be 'Active' if the game is over. Contact admin."
+            let text = match self.state {
+                State::WhiteWon => "You won! Press 'r' to play again. Press 'q' to quit.",
+                State::RedWon => "The AI won! Press 'r' to play again. Press 'q' to quit.",
+                State::Draw => "Draw!\nPress 'r' to play again. Press 'q' to quit.",
+                State::Active => "GameState should not be 'Active' if the game is over. Contact admin."
             };
 
             draw_text(
@@ -110,23 +114,25 @@ impl Scene for GameScene {
         }
 
         // render the board
-        // for (i, cell) in self.board.iter().enumerate() {
-        //     let x = (i % U_WIDTH) as f32;
-        //     let y = (i / U_WIDTH) as f32;
-        //     draw_circle(
-        //         x*d + offset, 
-        //         y*d + offset, 
-        //         d/2.0, 
-        //         cell.to_color()
-        //     );
+        for (i, cell) in self.board.get_cells().iter().enumerate() {
+            let x = (i % S_WIDTH) as f32;
+            let y = (i / S_WIDTH) as f32;
+            draw_circle(
+                x*d + offset, 
+                y*d + offset, 
+                d/2.0, 
+                cell.to_color()
+            );
 
-        //     draw_text(format!("{}", i).as_str(), x*d+offset, y*d+offset, 20., BLACK);
-        // }
+            draw_text(format!("{}", i).as_str(), x*d+offset, y*d+offset, 20., BLACK);
+        }
 
         if is_key_pressed(KeyCode::R) {
             self.board.reset();
+            self.state = State::Active;
         } else if is_key_pressed(KeyCode::Q) {
             self.board.reset();
+            self.state = State::Active;
             target_scene = Menu;
         }
 

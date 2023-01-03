@@ -21,35 +21,32 @@ pub enum AIType {
     Impossible
 }
 
-// #[macroquad::main("Connect-Four")]
-// async fn main() {
-fn main() {
+#[macroquad::main("Connect-Four")]
+async fn main() {
     let mut scene = Menu;
-    let mut ai = AIType::Easy;
+    let mut ai = AIType::Beginner;
     
     let mut menu_scene = MenuScene::new();
     let mut game_scene = GameScene::new();
     let mut current_scene: &mut dyn Scene = &mut menu_scene;
 
-    game_scene.test();
+    loop {
+        clear_background(BLACK);
 
-    // loop {
-    //     clear_background(BLACK);
+        let new_scene = current_scene.update(&mut ai);
+        if new_scene != scene {
+            match scene {
+                Menu => {
+                    scene = Game;
+                    current_scene = &mut game_scene;
+                },
+                Game => {
+                    scene = Menu;
+                    current_scene = &mut menu_scene;
+                },
+            }
+        }
 
-    //     let new_scene = current_scene.update(&mut ai);
-    //     if new_scene != scene {
-    //         match scene {
-    //             Menu => {
-    //                 scene = Game;
-    //                 current_scene = &mut game_scene;
-    //             },
-    //             Game => {
-    //                 scene = Menu;
-    //                 current_scene = &mut menu_scene;
-    //             },
-    //         }
-    //     }
-
-    //     next_frame().await
-    // }
+        next_frame().await
+    }
 }
