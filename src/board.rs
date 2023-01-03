@@ -92,6 +92,15 @@ impl Board {
         false 
     }
 
+    pub fn is_draw(&mut self) -> bool {
+        let mut draw = true;
+        for (col, h) in self.height.iter().enumerate() {
+            draw &= *h >= 6 + (col as u8) * U_WIDTH;
+        }
+
+        draw
+    }
+
     // refer to board above for the for magic numbers to make sense
     pub fn get_cells(&self) -> [Cell; S_WIDTH*S_HEIGHT] {
         let mut board = [Cell::Empty; S_WIDTH*S_HEIGHT];

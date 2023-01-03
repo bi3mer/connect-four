@@ -69,12 +69,15 @@ impl Scene for GameScene {
                 // player input to make a move on the board
                 if is_mouse_button_released(MouseButton::Left) {
                     self.board.make_move(col_index);
+                    if self.board.is_game_over(self.board.bit_board[0]) {
+                        self.state = State::WhiteWon;
+                    } else if self.board.is_draw() {
+                        self.state = State::Draw;
+                    }
                 }
             }
 
-            if self.board.is_game_over(self.board.bit_board[0]) {
-                self.state = State::WhiteWon;
-            } else if self.state == State::Active && !self.board.is_white_turn() {
+            if self.state == State::Active && !self.board.is_white_turn() {
                 // AI turn to make a move
                 match ai {
                    Beginner => ai::random::make_move(&mut self.board),
@@ -86,6 +89,8 @@ impl Scene for GameScene {
 
                 if self.board.is_game_over(self.board.bit_board[1]) {
                     self.state = State::RedWon;
+                } else if self.board.is_draw() {
+                    self.state = State::Draw;
                 }
             }
             
