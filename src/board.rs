@@ -1,8 +1,11 @@
 use std::{slice::Iter};
 use crate::cell::Cell;
 
-pub const U_WIDTH: usize = 7;
-pub const U_HEIGHT: usize = 6;
+pub const S_WIDTH: usize = 7;
+pub const S_HEIGHT: usize = 6;
+
+pub const U_WIDTH: u8 = 7;
+pub const U_HEIGHT: u8 = 6;
 
 pub const F_WIDTH: f32 = 7.0;
 pub const F_HEIGHT: f32 = 6.0;
@@ -15,36 +18,50 @@ pub enum BoardState {
     Active
 }
 
+/* 
+https://github.com/denkspuren/BitboardC4/blob/master/BitboardDesign.md
+  6 13 20 27 34 41 48   55 62     Additional row
++---------------------+ 
+| 5 12 19 26 33 40 47 | 54 61     top row
+| 4 11 18 25 32 39 46 | 53 60
+| 3 10 17 24 31 38 45 | 52 59
+| 2  9 16 23 30 37 44 | 51 58
+| 1  8 15 22 29 36 43 | 50 57
+| 0  7 14 21 28 35 42 | 49 56 63  bottom row
++---------------------+
+
+Using above as basis for this implementation.
+*/
 
 #[derive(Clone)]
 pub struct Board {
-    pub board: [Cell ; U_WIDTH*U_HEIGHT],
-    pub turn: Cell,
+    pub bit_board: [u64; 2],
+    height: [u8; 7],
+    counter: u8,
     pub state: BoardState
 }
 
 impl Board {
     pub fn new() -> Board {
         Board { 
-            board: [Cell::Empty; U_WIDTH*U_HEIGHT], 
-            turn: Cell::White,
+            bit_board: [0; 2],
+            height: [0, 7, 15, 24, 30, 35, 42],
+            counter: 0,
             state: BoardState::Active 
         }
     }
 
     pub fn reset(&mut self) {
-        self.turn = Cell::White;
+        self.bit_board[0] = 0;
+        self.bit_board[1] = 0;
+        self.height = [0, 7, 15, 24, 30, 35, 42];
+        self.counter = 0;
         self.state = BoardState::Active;
-        self.board.iter_mut().for_each(|e| { *e = Cell::Empty });
-    }
-
-    pub fn iter(&self) -> Iter<'_, Cell> {
-        self.board.iter()
     }
 
     pub fn get_next_boards(&self) -> Vec<Board> {
         let mut boards: Vec<Board> = Vec::new();
-        for column in 0..U_WIDTH {
+        for column in 0..S_WIDTH {
             let mut new_board = self.clone();
             if new_board.make_move(column) {
                 boards.push(new_board);
@@ -54,112 +71,28 @@ impl Board {
         boards
     }
 
-    pub fn make_move(&mut self, column: usize) -> bool {
-        let mut row: usize = 0;
-        let mut index = column + row*U_WIDTH;
-        if self.board[index] == Cell::Empty {
-            row += 1;
-            index = column + row*U_WIDTH;
-            while index < self.board.len() && self.board[index] == Cell::Empty {
-                row += 1;
-                index = column + row*U_WIDTH;
-            }
-
-            self.board[column + (row-1)*U_WIDTH] = self.turn;
-
-            if self.turn == Cell::Red {
-                self.turn = Cell::White;
-            } else if self.turn == Cell::White {
-                self.turn = Cell::Red;
-            }
-
-            self.update_board_state();
-            
-            true
-        } else {
-            false
-        }
-    }
-
-    fn check_indices(&mut self, len: usize, i_1: usize, i_2: usize, i_3: usize, i_4: usize) -> bool{
-        if i_4 < len && i_3 < len && i_2 < len && i_1 < len && 
-            self.board[i_1] != Cell::Empty &&
-            self.board[i_1] == self.board[i_2] &&
-            self.board[i_1] == self.board[i_3] &&
-            self.board[i_1] == self.board[i_4] {
-            if self.board[i_1] == Cell::Red {
-                self.state = BoardState::RedWon;
-            } else {
-                self.state = BoardState::WhiteWon;
-            }
-
-            return true;
+    pub fn make_move(&mut self, col: usize) -> bool {
+        let h = self.height[col];
+        if h >= 5 + (col as u8) *U_WIDTH {
+            return false;
         }
 
-        false
-    }
-
-    pub fn update_board_state(&mut self) -> Option<(usize, usize, usize, usize)> {
-        let len = self.board.len();
-        let mut empty_found = false;
+        let move_pos = (1 as u64) << h;
+        self.height[col] += 1;
+        self.bit_board[(self.counter & 1) as usize] ^= move_pos; 
+        self.counter += 1;
         
-        for row in 0..U_WIDTH {
-            for col in 0..U_HEIGHT {
-                let index = row + col * U_WIDTH;
-                empty_found |= self.board[index] == Cell::Empty;
-                let mut i_2;
-                let mut i_3;
-                let mut i_4;
-                
+        true
+    }
 
-                if row < U_WIDTH - 3 {
-                    // check to the right
-                    i_2 = row + 1 + col * U_WIDTH;
-                    i_3 = row + 2 + col * U_WIDTH;
-                    i_4 = row + 3 + col * U_WIDTH;
-                    if self.check_indices(len, index, i_2, i_3, i_4) {
-                        return Some((index, i_2, i_3, i_4));
-                    }
-
-                    // check diagonal down and to the right
-                    i_2 = row + 1 + (col + 1) * U_WIDTH;
-                    i_3 = row + 2 + (col + 2) * U_WIDTH;
-                    i_4 = row + 3 + (col + 3) * U_WIDTH;
-                    if self.check_indices(len, index, i_2, i_3, i_4) {
-                        return Some((index, i_2, i_3, i_4));
-                    }
-                }
-
-                // check diagonal down and to the left
-                if row >= 3 {
-                    i_2 = row - 1 + (col + 1) * U_WIDTH;
-                    i_3 = row - 2 + (col + 2) * U_WIDTH;
-                    i_4 = row - 3 + (col + 3) * U_WIDTH;
-                    if self.check_indices(len, index, i_2, i_3, i_4) {
-                        return Some((index, i_2, i_3, i_4));
-                    }
-                }
-
-                // check strai_typeght down
-                i_2 = row + (col + 1) * U_WIDTH; 
-                i_3 = row + (col + 2) * U_WIDTH; 
-                i_4 = row + (col + 3) * U_WIDTH;
-                if self.check_indices(len, index, i_2, i_3, i_4) {
-                    return Some((index, i_2, i_3, i_4));
-                }
-            }
-
-            if self.state != BoardState::Active {
-                break;
-            }
-        }
-
-        // check if it is a draw
-        if !empty_found && self.state == BoardState::Active {
-            self.state = BoardState::Draw;
-        }
-
-        None
+    pub fn is_game_over(&mut self, bit_board: u64) -> bool {
+        if bit_board & bit_board >> 6 & bit_board >> 12 & bit_board >> 18 != 0 { return true; } // diagonal \
+        if bit_board & bit_board >> 8 & bit_board >> 16 & bit_board >> 24 != 0 { return true; } // diagonal /
+        if bit_board & bit_board >> 7 & bit_board >> 14 & bit_board >> 21 != 0 { return true; } // horizontal
+        if bit_board & bit_board >> 1 & bit_board >>  2 & bit_board >>  3 != 0 { return true; } // vertical
+        
+        false 
     }
 }
 
+// TODO: implement iterator trait

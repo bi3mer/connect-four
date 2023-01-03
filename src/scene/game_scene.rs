@@ -12,8 +12,6 @@ pub struct GameScene {
     board: Board
 }
 
-
-
 impl GameScene {
     pub fn new() -> Self {
         GameScene {
@@ -32,6 +30,11 @@ impl GameScene {
         } else {
             None
         }
+    }
+
+    pub fn test(&mut self) {
+        println!("{:#064b}", self.board.bit_board[0]);
+        println!("{:#064b}", self.board.bit_board[1]);
     }
 }
 
@@ -65,24 +68,23 @@ impl Scene for GameScene {
             }
             
             // AI turn if possible
-            if self.board.turn == Cell::Red && self.board.state == BoardState::Active {
-                match ai {
-                   Beginner => ai::random::make_move(&mut self.board),
-                   Easy => ai::expectiminimax::make_move(&mut self.board, 2, ai),
-                   Medium => ai::expectiminimax::make_move(&mut self.board, 4, ai),
-                   Hard => ai::expectiminimax::make_move(&mut self.board, 6, ai),
-                   Impossible => todo!(),
-                }
-                
-            }
+            // if self.board.turn == Cell::Red && self.board.state == BoardState::Active {
+            //     match ai {
+            //        Beginner => ai::random::make_move(&mut self.board),
+            //        Easy => ai::expectiminimax::make_move(&mut self.board, 2, ai),
+            //        Medium => ai::expectiminimax::make_move(&mut self.board, 4, ai),
+            //        Hard => ai::expectiminimax::make_move(&mut self.board, 6, ai),
+            //        Impossible => todo!(),
+            //     }
+            // }
             
             // render the result if the game is over
             if let Some(indices) = self.board.update_board_state() {
-                let cell = if self.board.board[indices.0] == Cell::White { Cell::WhiteVictory } else { Cell::RedVictory };
-                self.board.board[indices.0] = cell;
-                self.board.board[indices.1] = cell;
-                self.board.board[indices.2] = cell;
-                self.board.board[indices.3] = cell;
+                // let cell = if self.board.board[indices.0] == Cell::White { Cell::WhiteVictory } else { Cell::RedVictory };
+                // self.board.board[indices.0] = cell;
+                // self.board.board[indices.1] = cell;
+                // self.board.board[indices.2] = cell;
+                // self.board.board[indices.3] = cell;
             }
 
             draw_text(
@@ -108,18 +110,18 @@ impl Scene for GameScene {
         }
 
         // render the board
-        for (i, cell) in self.board.iter().enumerate() {
-            let x = (i % U_WIDTH) as f32;
-            let y = (i / U_WIDTH) as f32;
-            draw_circle(
-                x*d + offset, 
-                y*d + offset, 
-                d/2.0, 
-                cell.to_color()
-            );
+        // for (i, cell) in self.board.iter().enumerate() {
+        //     let x = (i % U_WIDTH) as f32;
+        //     let y = (i / U_WIDTH) as f32;
+        //     draw_circle(
+        //         x*d + offset, 
+        //         y*d + offset, 
+        //         d/2.0, 
+        //         cell.to_color()
+        //     );
 
-            draw_text(format!("{}", i).as_str(), x*d+offset, y*d+offset, 20., BLACK);
-        }
+        //     draw_text(format!("{}", i).as_str(), x*d+offset, y*d+offset, 20., BLACK);
+        // }
 
         if is_key_pressed(KeyCode::R) {
             self.board.reset();
