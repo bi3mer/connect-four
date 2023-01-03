@@ -5,7 +5,7 @@ mod ui;
 mod board;
 
 mod scene;
-use scene::{scene_trait::Scene, menu_scene::MenuScene};
+use scene::{scene_trait::Scene, menu_scene::MenuScene, game_scene::GameScene};
 
 use crate::scene::scene_id::SceneId::*;
 
@@ -26,8 +26,8 @@ async fn main() {
     let mut scene = Menu;
     let mut ai = AIType::Easy;
     
-    // let mut board = Board::new();
     let mut menu_scene = MenuScene::new();
+    let mut game_scene = GameScene::new();
     let mut current_scene: &mut dyn Scene = &mut menu_scene;
 
     loop {
@@ -35,13 +35,15 @@ async fn main() {
 
         let new_scene = current_scene.update(&mut ai);
         if new_scene != scene {
-            println!("switch!");
-            if scene == Game {
-                scene = Menu;
-                // current_scene = &menu_scene as &mut dyn Scene;
-            } else {
-                scene = Menu;
-                println!("not implemented!");
+            match scene {
+                Menu => {
+                    scene = Game;
+                    current_scene = &mut game_scene;
+                },
+                Game => {
+                    scene = Menu;
+                    current_scene = &mut menu_scene;
+                },
             }
         }
 

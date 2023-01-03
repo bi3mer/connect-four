@@ -2,7 +2,6 @@ use macroquad::{prelude::{WHITE, RED, GRAY, BLUE}, window::{screen_width, screen
 use crate::scene::scene_trait::Scene;
 use crate::AIType::{self, *};
 use crate::ui::Button;
-
 use super::scene_id::SceneId::{self, *};
 
 pub struct MenuScene {
