@@ -80,7 +80,7 @@ impl Board {
     }
 
     // https://github.com/denkspuren/BitboardC4/blob/master/BitboardDesign.md#are-there-four-in-a-row
-    pub fn is_game_over(&mut self, bit_board: u64) -> bool {
+    pub fn is_game_over(&self, bit_board: u64) -> bool {
         let mut bb: u64;
         for d in DIRECTIONS.iter() {
             bb = bit_board & (bit_board >> d);
@@ -92,7 +92,7 @@ impl Board {
         false 
     }
 
-    pub fn is_draw(&mut self) -> bool {
+    pub fn is_draw(&self) -> bool {
         let mut draw = true;
         for (col, h) in self.height.iter().enumerate() {
             draw &= *h >= 6 + (col as u8) * U_WIDTH;

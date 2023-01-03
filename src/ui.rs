@@ -109,7 +109,7 @@ impl Button {
         self.clicked = 
             self.is_active && 
             mouse_in_bounds && 
-            is_mouse_button_pressed(MouseButton::Left);
+            is_mouse_button_released(MouseButton::Left);
 
         self.clicked
     }
