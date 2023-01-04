@@ -83,7 +83,7 @@ impl Scene for GameScene {
                    Beginner => ai::random::make_move(&mut self.board),
                    Easy => ai::minimax::make_move(&mut self.board, 3, ai),
                    Medium => ai::minimax::make_move(&mut self.board, 5, ai),
-                   Hard => ai::minimax::make_move(&mut self.board, 8, ai),
+                   Hard => ai::minimax::make_move(&mut self.board, 9, ai),
                    Impossible => todo!(),
                 }
 

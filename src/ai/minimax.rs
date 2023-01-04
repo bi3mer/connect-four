@@ -58,12 +58,12 @@ fn minimax(board: &Board, depth: u8, visited_states: &mut HashMap<u128, f32>) ->
 }
  
 pub fn make_move(board: &mut Board, max_depth: u8, ai_type: &AIType) {
+    let mut visited_states = HashMap::new();
     let mut rng = SmallRng::from_entropy();
     let mut boards = board.get_next_boards();
     let mut scores = Vec::new();
-    for b in boards.iter() {
-        let mut visited_states = HashMap::new();
 
+    for b in boards.iter() {
         let mut s = minimax(b, max_depth, &mut visited_states);
         if *ai_type != AIType::Hard {
             s += rng.gen::<f32>();
