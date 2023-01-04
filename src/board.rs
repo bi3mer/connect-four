@@ -30,7 +30,7 @@ Using above as basis for this implementation.
 pub struct Board {
     pub bit_board: [u64; 2],
     height: [u8; 7],
-    counter: u8
+    pub counter: u8
 }
 
 impl Board {
@@ -118,5 +118,10 @@ impl Board {
         }
         
         board
+    }
+
+    pub fn hash(&self) -> u128 {
+        let h: u128 = 0;
+        (h << 64) | (self.bit_board[0] as u128) | (h >> 64) | ((self.bit_board[1] as u128) << 64)
     }
 }

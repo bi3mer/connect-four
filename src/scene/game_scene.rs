@@ -81,9 +81,9 @@ impl Scene for GameScene {
                 // AI turn to make a move
                 match ai {
                    Beginner => ai::random::make_move(&mut self.board),
-                   Easy => ai::expectiminimax::make_move(&mut self.board, 2, ai),
-                   Medium => ai::expectiminimax::make_move(&mut self.board, 4, ai),
-                   Hard => ai::expectiminimax::make_move(&mut self.board, 6, ai),
+                   Easy => ai::minimax::make_move(&mut self.board, 3, ai),
+                   Medium => ai::minimax::make_move(&mut self.board, 5, ai),
+                   Hard => ai::minimax::make_move(&mut self.board, 8, ai),
                    Impossible => todo!(),
                 }
 
@@ -94,8 +94,6 @@ impl Scene for GameScene {
                 }
             }
             
-            // TODO: draw not handled!
-
             draw_text(
                 "Press 'r' to play again. Press 'q' to quit.", 
                 offset, 

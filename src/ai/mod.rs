@@ -1,2 +1,2 @@
-pub mod expectiminimax;
+pub mod minimax;
 pub mod random;
