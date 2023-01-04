@@ -128,8 +128,6 @@ impl Scene for GameScene {
                 d/2.0, 
                 cell.to_color()
             );
-
-            draw_text(format!("{}", i).as_str(), x*d+offset, y*d+offset, 20., BLACK);
         }
 
         if is_key_pressed(KeyCode::R) {
