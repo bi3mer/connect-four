@@ -24,7 +24,7 @@ pub enum AIType {
 #[macroquad::main("Connect-Four")]
 async fn main() {
     let mut scene = Menu;
-    let mut ai = AIType::Beginner;
+    let mut ai = AIType::Hard;
     
     let mut menu_scene = MenuScene::new();
     let mut game_scene = GameScene::new();

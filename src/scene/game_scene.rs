@@ -2,7 +2,7 @@ use macroquad::prelude::*;
 use std::cmp::min;
 
 use crate::AIType::{self, *};
-use crate::{ai, board::*, cell::Cell};
+use crate::{ai, board::*};
 
 use super::scene_id::SceneId::{self, *};
 use super::scene_trait::Scene;
@@ -17,15 +17,16 @@ pub enum State {
 
 pub struct GameScene {
     board: Board,
-    state: State
-
+    state: State,
+    alpha_beta: ai::alpha_beta::AlphaBeta
 }
 
 impl GameScene {
     pub fn new() -> Self {
         GameScene {
             board: Board::new(),
-            state: State::Active
+            state: State::Active,
+            alpha_beta: ai::alpha_beta::AlphaBeta::new()
         }
     }
 
@@ -81,9 +82,9 @@ impl Scene for GameScene {
                 // AI turn to make a move
                 match ai {
                    Beginner => ai::random::make_move(&mut self.board),
-                   Easy => ai::minimax::make_move(&mut self.board, 3, ai),
-                   Medium => ai::minimax::make_move(&mut self.board, 5, ai),
-                   Hard => ai::minimax::make_move(&mut self.board, 9, ai),
+                   Easy => self.alpha_beta.make_move(&mut self.board, 3, ai),
+                   Medium => self.alpha_beta.make_move(&mut self.board, 5, ai),
+                   Hard => self.alpha_beta.make_move(&mut self.board, 7, ai),
                    Impossible => todo!(),
                 }
 
