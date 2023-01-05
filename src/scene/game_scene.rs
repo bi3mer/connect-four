@@ -85,7 +85,7 @@ impl Scene for GameScene {
                    Easy => self.alpha_beta.make_move(&mut self.board, 3, ai),
                    Medium => self.alpha_beta.make_move(&mut self.board, 5, ai),
                    Hard => self.alpha_beta.make_move(&mut self.board, 7, ai),
-                   Impossible => self.alpha_beta.make_move(&mut self.board, 18, ai),
+                   Impossible => self.alpha_beta.make_move(&mut self.board, 17, ai),
                 }
 
                 if self.board.is_game_over(self.board.bit_board[1]) {

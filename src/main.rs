@@ -2,6 +2,7 @@ use macroquad::prelude::*;
 mod cell;
 mod ui;
 
+mod transition_table;
 mod board;
 
 mod scene;

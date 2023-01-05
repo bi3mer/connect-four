@@ -99,7 +99,7 @@ impl Board {
     }
 
     pub fn is_draw(&self) -> bool {
-        // U_WIDTH * U_HEIGHT = 8 * 7 = 42
+        // U_WIDTH * U_HEIGHT = 6 * 7 = 42
         self.counter == 42 
     }
 
@@ -122,8 +122,9 @@ impl Board {
         board
     }
 
-    pub fn hash(&self) -> u128 {
-        let h: u128 = 0;
-        (h << 64) | (self.bit_board[0] as u128) | (h >> 64) | ((self.bit_board[1] as u128) << 64)
+    pub fn hash(&self) -> u64 {
+        // let h: u128 = 0;
+        // (h << 64) | (self.bit_board[0] as u128) | (h >> 64) | ((self.bit_board[1] as u128) << 64)
+        self.bit_board[0] + (self.bit_board[0] | self.bit_board[1])
     }
 }

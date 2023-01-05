@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
 use rand::Rng;
@@ -6,14 +5,15 @@ use rand::Rng;
 use crate::board::Board;
 use crate::AIType;
 use crate::board::{I_HEIGHT, I_WIDTH, MIN_SCORE};
+use crate::transition_table::TransitionTable;
 
 pub struct AlphaBeta {
-    transposition_table: HashMap<u128, i8>,
+    transposition_table: TransitionTable,
 }
 
 impl AlphaBeta {
     pub fn new() -> Self {
-        AlphaBeta { transposition_table: HashMap::new() }
+        AlphaBeta { transposition_table: TransitionTable::new() }
     }
 
     fn negamax(&mut self, board: &Board, depth: u8, alpha: i8, beta: i8) -> i8 {
@@ -39,7 +39,7 @@ impl AlphaBeta {
 
         // update beta if beta is greater than the max possible score and prune
         // if alpha is greater than beta.
-        let max: i8 = match self.transposition_table.get(&board.hash()) {
+        let max: i8 = match self.transposition_table.get(board.hash()) {
             Some(val) => val + MIN_SCORE - 1,
             None => (I_WIDTH*I_HEIGHT- 1 - board.counter)/2,
         };
@@ -61,7 +61,7 @@ impl AlphaBeta {
             if s > a { a = s; }
         }
 
-        self.transposition_table.insert(board.hash(), a - MIN_SCORE + 1);
+        self.transposition_table.set(board.hash(), a - MIN_SCORE + 1);
         a
     }
 
@@ -87,10 +87,6 @@ impl AlphaBeta {
             scores.push(s);
         }
 
-        // clear transposition table since it is no longer accurate with a 
-        // depth limited approach
-        self.transposition_table.clear();
-
         // chose best move
         let mut best_score = -(I_WIDTH*I_HEIGHT);
         let mut index = 0;
@@ -103,5 +99,10 @@ impl AlphaBeta {
 
         // update the board
         std::mem::swap(board, &mut (boards[index]));
+
+        // clear transposition table since it is no longer accurate with a 
+        // depth limited approach
+        self.transposition_table.reset();
+
     }
 }
