@@ -9,8 +9,13 @@ pub const U_WIDTH: u8 = 7;
 pub const F_WIDTH: f32 = 7.0;
 pub const F_HEIGHT: f32 = 6.0;
 
+pub const I_WIDTH: i8 = 7;
+pub const I_HEIGHT: i8 = 6;
+
 pub const DIRECTIONS: [u8; 4] = [1, 7, 6, 8];
 pub const COLUMN_ORDER: [usize; 7] = [3,4,2,5,1,6,0]; // search from the middle out
+
+pub const MIN_SCORE: i8 = -(I_WIDTH*I_HEIGHT)/2 + 3;
 
 /* 
 https://github.com/denkspuren/BitboardC4/blob/master/BitboardDesign.md
@@ -31,7 +36,7 @@ Using above as basis for this implementation.
 pub struct Board {
     pub bit_board: [u64; 2], // 0 is player and 1 is the AI
     height: [u8; 7],
-    pub counter: u8
+    pub counter: i8
 }
 
 impl Board {
@@ -117,8 +122,8 @@ impl Board {
         board
     }
 
-    // pub fn hash(&self) -> u128 {
-    //     let h: u128 = 0;
-    //     (h << 64) | (self.bit_board[0] as u128) | (h >> 64) | ((self.bit_board[1] as u128) << 64)
-    // }
+    pub fn hash(&self) -> u128 {
+        let h: u128 = 0;
+        (h << 64) | (self.bit_board[0] as u128) | (h >> 64) | ((self.bit_board[1] as u128) << 64)
+    }
 }
