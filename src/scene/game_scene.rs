@@ -2,6 +2,7 @@ use macroquad::prelude::*;
 use std::cmp::min;
 
 use crate::AIType::{self, *};
+use crate::ui::Button;
 use crate::{ai, board::*};
 
 use super::scene_id::SceneId::{self, *};
@@ -94,26 +95,19 @@ impl Scene for GameScene {
                     self.state = State::Draw;
                 }
             }
-            
-            draw_text(
-                "Press 'r' to play again. Press 'q' to quit.", 
-                offset, 
-                screen_height() - d, 
-                20.0, 
-                WHITE);
         } else {
             let text = match self.state {
-                State::WhiteWon => "You won! Press 'r' to play again. Press 'q' to quit.",
-                State::RedWon => "The AI won! Press 'r' to play again. Press 'q' to quit.",
-                State::Draw => "Draw!\nPress 'r' to play again. Press 'q' to quit.",
+                State::WhiteWon => "You won!",
+                State::RedWon => "The AI won! ",
+                State::Draw => "Draw!",
                 State::Active => "GameState should not be 'Active' if the game is over. Contact admin."
             };
 
             draw_text(
                 text, 
-                offset, 
-                screen_height() - d, 
-                20.0, 
+                screen_width()/2., 
+                d, 
+                40.0, 
                 WHITE);
         }
 
@@ -129,10 +123,30 @@ impl Scene for GameScene {
             );
         }
 
-        if is_key_pressed(KeyCode::R) {
+        // render buttons to restart or quit
+        if Button::new()
+            .pos(screen_width()/2. - d, screen_height() - d)
+            .dimensions(58., 20.)
+            .color(WHITE)
+            .hover_color(BLUE)
+            .text(" Restart".to_string())
+            .font_size(15.)
+            .font_color(BLACK)
+            .draw() 
+        {
             self.board.reset();
             self.state = State::Active;
-        } else if is_key_pressed(KeyCode::Q) {
+        }
+        else if Button::new()
+            .pos(screen_width()/2. + d, screen_height() - d)
+            .dimensions(36., 20.)
+            .color(WHITE)
+            .hover_color(BLUE)
+            .text(" Quit".to_string())
+            .font_size(15.)
+            .font_color(BLACK)
+            .draw() 
+        {
             self.board.reset();
             self.state = State::Active;
             target_scene = Menu;
