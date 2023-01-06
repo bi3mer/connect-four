@@ -31,14 +31,14 @@ impl GameScene {
         }
     }
 
-    fn get_mouse_column(&self, pos: (f32, f32), offset: f32, d: f32) -> Option<usize> {
+    fn get_mouse_column(&self, pos: (f32, f32), offset: (f32, f32), d: f32) -> Option<usize> {
         let r = d/2.0;
-        if pos.0 >= offset - r && 
-           pos.0 <= offset + d*(F_WIDTH-1.0) + r &&
-           pos.1 >= offset - r &&
-           pos.1 <= offset + d*(F_HEIGHT-1.0) + r {
-            let x = pos.0 - offset;
-            Some(((x+r) / d) as usize)
+        if pos.0 >= offset.0 && 
+           pos.0 <= offset.0 + d*(F_WIDTH-1.0) + d &&
+           pos.1 >= offset.1 - r &&
+           pos.1 <= offset.1 + d*(F_HEIGHT-1.0) + d {
+            let x = pos.0 - offset.0;
+            Some(((x) / d) as usize)
         } else {
             None
         }
@@ -51,19 +51,24 @@ impl Scene for GameScene {
 
         // get diameter of board based on current screen size
         let d = min(
-            (screen_width() / (F_WIDTH + 4.0)) as i32, 
-            (screen_height() / (F_HEIGHT + 4.0)) as i32
+            (screen_width() / (F_WIDTH + 4.)) as i32, 
+            (screen_height() / (F_HEIGHT + 4.)) as i32
         ) as f32;
-        let offset = d * 3.0;
+
+        let board_width = d * F_WIDTH;
+        let board_height = d * F_WIDTH;
+        let offset_width = (screen_width() - board_width) / 2.;
+        let offset_height = (screen_height() - board_height) / 2.;
+        let max_offset = f32::max(offset_width, offset_height);
 
         if self.state == State::Active {
             let mouse_pos = mouse_position();
-            let mouse_col = self.get_mouse_column(mouse_pos, offset, d);
+            let mouse_col = self.get_mouse_column(mouse_pos, (offset_width, offset_height), d);
             if let Some(col_index) = mouse_col {
                 // highlight the column the player is hovering over
                 draw_rectangle(
-                    offset - d/2.0 + d*col_index as f32, 
-                    offset - d/2.0, 
+                    offset_width + d*col_index as f32, 
+                    offset_height, 
                     d, 
                     d*F_HEIGHT, 
                     Color { r: 0.188, g: 0.835, b: 0.784, a: 0.2 });
@@ -105,7 +110,7 @@ impl Scene for GameScene {
 
             draw_text(
                 text, 
-                screen_width()/2., 
+                screen_width()/2. - d, 
                 d, 
                 40.0, 
                 WHITE);
@@ -116,8 +121,8 @@ impl Scene for GameScene {
             let x = (i % S_WIDTH) as f32;
             let y = (i / S_WIDTH) as f32;
             draw_circle(
-                x*d + offset, 
-                y*d + offset, 
+                x*d + d/2. + offset_width, 
+                y*d + d/2. + offset_height, 
                 d/2.0, 
                 cell.to_color()
             );
@@ -125,27 +130,27 @@ impl Scene for GameScene {
 
         // render buttons to restart or quit
         if Button::new()
-            .pos(screen_width()/2. - d, screen_height() - d)
-            .dimensions(58., 20.)
+            .pos(screen_width()/2. - d, screen_height() - max_offset/2.)
+            .dimensions(78., 30.)
             .color(WHITE)
             .hover_color(BLUE)
             .text(" Restart".to_string())
-            .font_size(15.)
+            .font_size(20.)
             .font_color(BLACK)
-            .draw() 
+            .draw() || is_key_pressed(KeyCode::R)
         {
             self.board.reset();
             self.state = State::Active;
         }
         else if Button::new()
-            .pos(screen_width()/2. + d, screen_height() - d)
-            .dimensions(36., 20.)
+            .pos(screen_width()/2. + d, screen_height() - max_offset/2.)
+            .dimensions(50., 30.)
             .color(WHITE)
             .hover_color(BLUE)
             .text(" Quit".to_string())
-            .font_size(15.)
+            .font_size(20.)
             .font_color(BLACK)
-            .draw() 
+            .draw() || is_key_pressed(KeyCode::Q)
         {
             self.board.reset();
             self.state = State::Active;
