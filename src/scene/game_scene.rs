@@ -91,7 +91,7 @@ impl Scene for GameScene {
                    Easy => self.alpha_beta.make_move(&mut self.board, 3, ai),
                    Medium => self.alpha_beta.make_move(&mut self.board, 5, ai),
                    Hard => self.alpha_beta.make_move(&mut self.board, 7, ai),
-                   Impossible => self.alpha_beta.make_move(&mut self.board, 17, ai),
+                   Impossible => self.alpha_beta.make_move(&mut self.board, 35, ai),
                 }
 
                 if self.board.is_game_over(self.board.bit_board[1]) {
@@ -103,7 +103,7 @@ impl Scene for GameScene {
         } else {
             let text = match self.state {
                 State::WhiteWon => "You won!",
-                State::RedWon => "The AI won! ",
+                State::RedWon => "AI won! ",
                 State::Draw => "Draw!",
                 State::Active => "GameState should not be 'Active' if the game is over. Contact admin."
             };

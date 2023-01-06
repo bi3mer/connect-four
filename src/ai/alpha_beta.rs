@@ -9,21 +9,19 @@ use crate::transition_table::TransitionTable;
 
 pub struct AlphaBeta {
     transposition_table: TransitionTable,
+    nodes_explored: u128
 }
 
 impl AlphaBeta {
     pub fn new() -> Self {
-        AlphaBeta { transposition_table: TransitionTable::new() }
+        AlphaBeta { transposition_table: TransitionTable::new(), nodes_explored: 0}
     }
 
     fn negamax(&mut self, board: &Board, depth: u8, alpha: i8, beta: i8) -> i8 {
-        // Check if game is drawn
-        if board.is_draw() {
-            return 0;
-        }
+        self.nodes_explored += 1;
 
-        // Check if max depth reached
-        if depth == 0 {
+        // Check if game is drawn or if the search is at max depth
+        if board.is_draw() || depth == 0{
             return 0;
         }
         
@@ -51,10 +49,7 @@ impl AlphaBeta {
         }
         
         // Run negamax
-        // https://en.wikipedia.org/wiki/Negamax#Negamax_with_alpha_beta_pruning
-        // let mut score: f32 = -10000.;
         let mut a = alpha;
-        
         for next_board in boards.iter() {
             let s = -self.negamax(next_board, depth - 1, -beta, -a);
             if s >= b { return s; }
@@ -65,45 +60,60 @@ impl AlphaBeta {
         a
     }
 
+    pub fn iterative_deepening(&mut self, board: &Board, max_depth: u8) -> i8 {
+        let max = (I_WIDTH*I_HEIGHT + 1 - board.counter)/2;
+        let min = -(I_WIDTH*I_HEIGHT - board.counter)/2;
+
+        let mut score = 0;
+        for depth in 1..max_depth {
+            score = self.negamax(board, depth, min, max);
+        }
+
+        score
+    }
+
     pub fn make_move(&mut self, board: &mut Board, max_depth: u8, ai_type: &AIType) {
         let mut boards = board.get_next_boards();
         let mut game_ending_move_found = false;
         let mut index = 0;
 
-        // first check if there are any moves that end the game. If so, use
-        // that and avoid wasted computation
+        // Check if there are any moves that end the game. If so, use that and
+        // avoid wasted computation in the search
         for (i, b) in boards.iter().enumerate() {
-            if b.is_game_over(1) {
+            if b.is_game_over(b.bit_board[1]) {
                 index = i;
                 game_ending_move_found = true;
                 break;
             }
         }
 
-        // otherwise, go through the search process
+        // Otherwise, go through the search process
         if !game_ending_move_found {
             let mut rng = SmallRng::from_entropy();
             let mut best_score = -(I_WIDTH*I_HEIGHT);
             let mut scores = Vec::new();
 
-            // evaluate possible moves
+            // Evaluate possible moves with iterative deepening search
             for b in boards.iter() {
-                let mut s = -self.negamax(
-                    b, 
-                    max_depth, 
-                    -(I_WIDTH*I_HEIGHT)/2,
-                    (I_WIDTH*I_HEIGHT)/2
-                );
-
+                // let max = (I_WIDTH*I_HEIGHT + 1 - board.counter)/2;
+                // let min = -(I_WIDTH*I_HEIGHT - board.counter)/2;
+                // let mut s = -self.negamax(
+                //     b, 
+                //     max_depth, 
+                //     min,
+                //     max
+                // );
+                let mut s = -self.iterative_deepening(b, max_depth);
+                
                 // RNG added to make easy and medium bots easier to defeat
                 if *ai_type == AIType::Easy || *ai_type == AIType::Medium {
                     s += rng.gen::<i8>();
                 }
-
+                
                 scores.push(s);
             }
 
-            // chose the best move
+            // Choose the best move
             for (i, s) in scores.iter().enumerate() {
                 if *s > best_score {
                     best_score = *s;
@@ -111,9 +121,11 @@ impl AlphaBeta {
                 }
             }
 
-            // clear transposition table since it is no longer accurate with a 
+            // Clear transposition table since it is no longer accurate with a 
             // depth limited approach
+            println!("Explored {} nodes", self.nodes_explored);
             self.transposition_table.reset();
+            self.nodes_explored = 0;
         }
 
         // update the board
