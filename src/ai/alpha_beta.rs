@@ -66,43 +66,57 @@ impl AlphaBeta {
     }
 
     pub fn make_move(&mut self, board: &mut Board, max_depth: u8, ai_type: &AIType) {
-        let mut rng = SmallRng::from_entropy();
         let mut boards = board.get_next_boards();
-        let mut scores = Vec::new();
+        let mut game_ending_move_found = false;
+        let mut index = 0;
 
-        // evaluate possible moves
-        for b in boards.iter() {
-            let mut s = -self.negamax(
-                b, 
-                max_depth, 
-                -(I_WIDTH*I_HEIGHT)/2,
-                (I_WIDTH*I_HEIGHT)/2
-            );
-
-            // RNG added to make easy and medium bots easier to defeat
-            if *ai_type == AIType::Easy || *ai_type == AIType::Medium {
-                s += rng.gen::<i8>();
+        // first check if there are any moves that end the game. If so, use
+        // that and avoid wasted computation
+        for (i, b) in boards.iter().enumerate() {
+            if b.is_game_over(1) {
+                index = i;
+                game_ending_move_found = true;
+                break;
             }
-
-            scores.push(s);
         }
 
-        // chose best move
-        let mut best_score = -(I_WIDTH*I_HEIGHT);
-        let mut index = 0;
-        for (i, s) in scores.iter().enumerate() {
-            if *s > best_score {
-                best_score = *s;
-                index = i;
+        // otherwise, go through the search process
+        if !game_ending_move_found {
+            let mut rng = SmallRng::from_entropy();
+            let mut best_score = -(I_WIDTH*I_HEIGHT);
+            let mut scores = Vec::new();
+
+            // evaluate possible moves
+            for b in boards.iter() {
+                let mut s = -self.negamax(
+                    b, 
+                    max_depth, 
+                    -(I_WIDTH*I_HEIGHT)/2,
+                    (I_WIDTH*I_HEIGHT)/2
+                );
+
+                // RNG added to make easy and medium bots easier to defeat
+                if *ai_type == AIType::Easy || *ai_type == AIType::Medium {
+                    s += rng.gen::<i8>();
+                }
+
+                scores.push(s);
             }
+
+            // chose the best move
+            for (i, s) in scores.iter().enumerate() {
+                if *s > best_score {
+                    best_score = *s;
+                    index = i;
+                }
+            }
+
+            // clear transposition table since it is no longer accurate with a 
+            // depth limited approach
+            self.transposition_table.reset();
         }
 
         // update the board
         std::mem::swap(board, &mut (boards[index]));
-
-        // clear transposition table since it is no longer accurate with a 
-        // depth limited approach
-        self.transposition_table.reset();
-
     }
 }
