@@ -54,6 +54,38 @@ impl Board {
         self.counter = 0;
     }
 
+    fn loses_next_turn(&mut self) -> bool {
+        let index = (self.counter & 1) as usize;
+        for column in COLUMN_ORDER {
+            if self.make_move(column) {
+                let game_over = self.is_game_over(self.bit_board[index]);
+                self.undo_move(column);
+
+                if game_over {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
+    // Return all possible next boards but will not return boards where
+    // the next move can result in a guaranteed loss.
+    pub fn get_next_non_losing_boards(&self) -> Vec<Board> {
+        let mut boards: Vec<Board> = Vec::new();
+        for column in COLUMN_ORDER {
+            let mut new_board = self.clone();
+            let new_board_is_valid = new_board.make_move(column);
+            if new_board_is_valid && !new_board.loses_next_turn() {
+                boards.push(new_board);
+            }
+        }
+
+        boards
+    }
+
+    // Return all possible next boards
     pub fn get_next_boards(&self) -> Vec<Board> {
         let mut boards: Vec<Board> = Vec::new();
         for column in COLUMN_ORDER {
@@ -77,11 +109,18 @@ impl Board {
         }
 
         let move_pos = (1_u64) << h;
-        self.height[col] += 1;
         self.bit_board[(self.counter & 1) as usize] ^= move_pos; 
+        self.height[col] += 1;
         self.counter += 1;
         
         true
+    }
+
+    pub fn undo_move(&mut self, col: usize) {
+        self.counter -= 1;
+        self.height[col] -= 1;
+        let move_pos = 1_u64 << (self.height[col] as i64);
+        self.bit_board[(self.counter & 1) as usize] ^= move_pos;
     }
 
     // https://github.com/denkspuren/BitboardC4/blob/master/BitboardDesign.md#are-there-four-in-a-row
@@ -121,8 +160,8 @@ impl Board {
     }
 
     pub fn hash(&self) -> u64 {
-        // let h: u128 = 0;
-        // (h << 64) | (self.bit_board[0] as u128) | (h >> 64) | ((self.bit_board[1] as u128) << 64)
-        self.bit_board[0] + (self.bit_board[0] | self.bit_board[1])
+        let index = (self.counter & 1) as usize;
+        let index_2 = ((self.counter+1) & 1) as usize;
+        self.bit_board[index] + (self.bit_board[index] | self.bit_board[index_2])
     }
 }
