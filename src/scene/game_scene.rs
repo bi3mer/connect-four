@@ -88,10 +88,10 @@ impl Scene for GameScene {
                 // AI turn to make a move
                 match ai {
                    Beginner => ai::random::make_move(&mut self.board),
-                   Easy => self.alpha_beta.make_move(&mut self.board, 3, ai),
-                   Medium => self.alpha_beta.make_move(&mut self.board, 5, ai),
-                   Hard => self.alpha_beta.make_move(&mut self.board, 7, ai),
-                   Impossible => self.alpha_beta.make_move(&mut self.board, 35, ai),
+                   Easy => self.alpha_beta.make_move(&mut self.board, 4, ai),
+                   Medium => self.alpha_beta.make_move(&mut self.board, 10, ai),
+                   Hard => self.alpha_beta.make_move(&mut self.board, 10, ai),
+                   Impossible => self.alpha_beta.make_move(&mut self.board, 30, ai),
                 }
 
                 if self.board.is_game_over(self.board.bit_board[1]) {

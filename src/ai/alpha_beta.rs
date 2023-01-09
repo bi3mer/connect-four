@@ -60,17 +60,6 @@ impl AlphaBeta {
         a
     }
 
-    pub fn iterative_deepening(&mut self, board: &Board, max_depth: u8) -> i8 {
-        let max = (I_WIDTH*I_HEIGHT + 1 - board.counter)/2;
-        let min = -(I_WIDTH*I_HEIGHT - board.counter)/2;
-
-        let mut score = 0;
-        for depth in 1..max_depth {
-            score = self.negamax(board, depth, min, max);
-        }
-
-        score
-    }
 
     pub fn make_move(&mut self, board: &mut Board, max_depth: u8, ai_type: &AIType) {
         let mut boards = board.get_next_boards();
@@ -94,30 +83,43 @@ impl AlphaBeta {
             let mut scores = Vec::new();
 
             // Evaluate possible moves with iterative deepening search
-            for b in boards.iter() {
-                // let max = (I_WIDTH*I_HEIGHT + 1 - board.counter)/2;
-                // let min = -(I_WIDTH*I_HEIGHT - board.counter)/2;
-                // let mut s = -self.negamax(
-                //     b, 
-                //     max_depth, 
-                //     min,
-                //     max
-                // );
-                let mut s = -self.iterative_deepening(b, max_depth);
-                
-                // RNG added to make easy and medium bots easier to defeat
-                if *ai_type == AIType::Easy || *ai_type == AIType::Medium {
-                    s += rng.gen::<i8>();
+            let min = -(I_WIDTH*I_HEIGHT - board.counter)/2;
+            let max = (I_WIDTH*I_HEIGHT + 1 - board.counter)/2;
+
+            
+            // Iterative deepening starting at a reasonable depth
+            for depth in (max_depth/3)..max_depth {
+                scores.clear();
+                for b in boards.iter() {
+                    scores.push(-self.negamax(
+                        b, 
+                        depth, 
+                        min,
+                        max
+                    ));
                 }
-                
-                scores.push(s);
             }
 
-            // Choose the best move
-            for (i, s) in scores.iter().enumerate() {
-                if *s > best_score {
-                    best_score = *s;
-                    index = i;
+            // RNG added to make easy and medium bots easier to defeat
+            if *ai_type == AIType::Easy || *ai_type == AIType::Medium {
+                // Choose move probabilistically 
+                let sum = scores.iter().sum::<i8>() as f32;
+                let rand = rng.gen::<f32>();
+                let mut current_probability = 0.;
+                for (i, s) in scores.iter().enumerate() {
+                    current_probability += (*s as f32) / sum;
+                    if current_probability >= rand {
+                        index = i;
+                        break;
+                    }
+                }
+            } else {
+                // Choose the best move
+                for (i, s) in scores.iter().enumerate() {
+                    if *s > best_score {
+                        best_score = *s;
+                        index = i;
+                    }
                 }
             }
 
