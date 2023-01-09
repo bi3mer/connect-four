@@ -12,7 +12,6 @@ pub const F_HEIGHT: f32 = 6.0;
 pub const I_WIDTH: i8 = 7;
 pub const I_HEIGHT: i8 = 6;
 
-pub const DIRECTIONS: [u8; 4] = [1, 7, 6, 8];
 pub const COLUMN_ORDER: [usize; 7] = [3,4,2,5,1,6,0]; // search from the middle out
 
 pub const MIN_SCORE: i8 = -(I_WIDTH*I_HEIGHT)/2 + 3;
@@ -87,20 +86,19 @@ impl Board {
 
     // https://github.com/denkspuren/BitboardC4/blob/master/BitboardDesign.md#are-there-four-in-a-row
     pub fn is_game_over(&self, bit_board: u64) -> bool {
-        let mut bb: u64;
-        for d in DIRECTIONS.iter() {
-            bb = bit_board & (bit_board >> d);
-            if (bb & (bb >> (2*d))) != 0 {
-                return true;
-            }
-        }
+        let diag_1 = bit_board & (bit_board >> 6); // diagonal \
+        let diag_2 = bit_board & (bit_board >> 8);
+        let horizontal = bit_board & (bit_board >> 7);
+        let vertical = bit_board & (bit_board >> 1);
 
-        false 
+        diag_1 & (diag_1 >> 12) != 0 ||
+        diag_2 & (diag_2 >> 16) != 0 ||
+        horizontal & (horizontal >> 14) != 0 ||
+        vertical & (vertical >> 2) != 0
     }
 
     pub fn is_draw(&self) -> bool {
-        // U_WIDTH * U_HEIGHT = 6 * 7 = 42
-        self.counter == 42 
+        self.counter == 42 // U_WIDTH * U_HEIGHT = 6 * 7 = 42
     }
 
     // refer to board above for the for magic numbers to make sense

@@ -7,8 +7,7 @@ mod board;
 
 mod scene;
 use scene::{scene_trait::Scene, menu_scene::MenuScene, game_scene::GameScene};
-
-use crate::scene::scene_id::SceneId::*;
+use scene::scene_id::SceneId::*;
 
 mod ai;
 
