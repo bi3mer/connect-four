@@ -31,7 +31,7 @@ https://github.com/denkspuren/BitboardC4/blob/master/BitboardDesign.md
 Using above as basis for this implementation.
 */
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
 pub struct Board {
     pub bit_board: [u64; 2], // 0 is player and 1 is the AI
     height: [u8; 7],
@@ -43,7 +43,7 @@ impl Board {
         Board { 
             bit_board: [0; 2],
             height: [0, 7, 14, 21, 28, 35, 42],
-            counter: 0
+            counter: 0,
         }
     }
 
@@ -72,13 +72,16 @@ impl Board {
 
     // Return all possible next boards but will not return boards where
     // the next move can result in a guaranteed loss.
-    pub fn get_next_non_losing_boards(&self) -> Vec<Board> {
-        let mut boards: Vec<Board> = Vec::new();
+    pub fn get_next_non_losing_boards(&self) -> [Option<Board>; S_WIDTH] {
+        let mut boards = [None; S_WIDTH];
+        let mut i = 0;
+
         for column in COLUMN_ORDER {
-            let mut new_board = self.clone();
+            let mut new_board = *self;
             let new_board_is_valid = new_board.make_move(column);
             if new_board_is_valid && !new_board.loses_next_turn() {
-                boards.push(new_board);
+                boards[i] = Some(new_board);
+                i += 1;
             }
         }
 
@@ -89,7 +92,7 @@ impl Board {
     pub fn get_next_boards(&self) -> Vec<Board> {
         let mut boards: Vec<Board> = Vec::new();
         for column in COLUMN_ORDER {
-            let mut new_board = self.clone();
+            let mut new_board = *self;
             if new_board.make_move(column) {
                 boards.push(new_board);
             }

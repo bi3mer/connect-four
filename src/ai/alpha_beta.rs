@@ -28,25 +28,17 @@ impl AlphaBeta {
         
         // Get boards where the next move is not an immediate loss and if there
         // are no boards than return a negative evaluation
-        let boards = if board.is_white_turn() { 
-            board.get_next_boards()
-        } else  { 
-            board.get_next_non_losing_boards()
-        };
+        let boards = board.get_next_non_losing_boards();
+        // let boards = if board.is_white_turn() { 
+        //     board.get_next_boards()
+        // } else  { 
+        //     board.get_next_non_losing_boards()
+        // };
         
         // If there is no possible move, return a lower bound score since we 
         // are losing.
-        if boards.is_empty() {
+        if boards[0].is_none() {
             return -(I_WIDTH*I_HEIGHT - board.counter)/2
-        }
-
-        // Check if there is a move that ends the game in the players favor.
-        // Higher reward for moves that finish the game earlier.
-        let i = (board.counter & 1) as usize;
-        for next_board in boards.iter() {
-            if next_board.is_game_over(next_board.bit_board[i]) {
-                return (I_WIDTH*I_HEIGHT + 1 - board.counter) / 2;
-            }
         }
 
         // Update alpha, lower bound, if alpha is below the lower bound and there 
@@ -76,7 +68,7 @@ impl AlphaBeta {
         }
         
         // Run negamax
-        for next_board in boards.iter() {
+        for next_board in boards.iter().flatten() {
             let s = -self.negamax(next_board, depth - 1, -beta, -a);
             
             if s >= b { 
@@ -96,21 +88,24 @@ impl AlphaBeta {
 
 
     pub fn make_move(&mut self, board: &mut Board, max_depth: u8, ai_type: &AIType) {
-        let mut boards = board.get_next_non_losing_boards();
+        let boards = board.get_next_non_losing_boards();
         let mut game_ending_move_found = false;
         let mut index = 0;
 
         // If there is more than one possible none losing move, than we go
         // through the search process
-        if !boards.is_empty() {
+        if boards[0].is_some() {
             let time = Instant::now();
+
             // Check if there are any moves that end the game. If so, use that and
             // avoid wasted computation in the search
-            for (i, b) in boards.iter().enumerate() {
-                if b.is_game_over(b.bit_board[1]) {
-                    index = i;
-                    game_ending_move_found = true;
-                    break;
+            for (i, wrapped_board) in boards.iter().enumerate() {
+                if let Some(b) = wrapped_board {
+                    if b.is_game_over(b.bit_board[1]) {
+                        index = i;
+                        game_ending_move_found = true;
+                        break;
+                    }
                 }
             }
 
@@ -127,7 +122,7 @@ impl AlphaBeta {
                 // Iterative deepening starting at a reasonable depth
                 for depth in (max_depth/3)..max_depth {
                     scores.clear();
-                    for b in boards.iter() {
+                    for b in boards.iter().flatten() {
                         scores.push(-self.negamax(
                             b, 
                             depth, 
@@ -172,13 +167,14 @@ impl AlphaBeta {
                 self.transposition_table.reset();
                 self.nodes_explored = 0;
             }
+
+            // update the board
+            std::mem::swap(board, &mut (boards[index].unwrap()));
         } else {
             // Else there isn't a non-losing, and we select a random board to 
             // keep the game going
-            boards = board.get_next_boards();
+            let mut any_board = board.get_next_boards();
+            std::mem::swap(board, &mut (any_board[0]));
         }
-
-        // update the board
-        std::mem::swap(board, &mut (boards[index]));
     }
 }
