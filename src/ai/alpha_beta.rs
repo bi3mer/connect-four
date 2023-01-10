@@ -1,6 +1,7 @@
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
 use rand::Rng;
+use std::time::Instant;
 
 use crate::board::Board;
 use crate::AIType;
@@ -25,9 +26,22 @@ impl AlphaBeta {
             return 0;
         }
         
+        // Get boards where the next move is not an immediate loss and if there
+        // are no boards than return a negative evaluation
+        let boards = if board.is_white_turn() { 
+            board.get_next_boards()
+        } else  { 
+            board.get_next_non_losing_boards()
+        };
+        
+        // If there is no possible move, return a lower bound score since we 
+        // are losing.
+        if boards.is_empty() {
+            return -(I_WIDTH*I_HEIGHT - board.counter)/2
+        }
+
         // Check if there is a move that ends the game in the players favor.
         // Higher reward for moves that finish the game earlier.
-        let boards = board.get_next_non_losing_boards();
         let i = (board.counter & 1) as usize;
         for next_board in boards.iter() {
             if next_board.is_game_over(next_board.bit_board[i]) {
@@ -35,7 +49,18 @@ impl AlphaBeta {
             }
         }
 
-        // update beta if beta is greater than the max possible score and prune
+        // Update alpha, lower bound, if alpha is below the lower bound and there 
+        // is no beta larger than our max possible score.
+        let mut a = alpha;
+        let min = -(I_WIDTH*I_HEIGHT - 2 - board.counter)/2;
+        if a < min {
+            a = min;
+            if a >= beta {
+                return a;
+            }
+        }
+
+        // Update beta, upper bound, if beta is greater than the max possible score and prune
         // if alpha is greater than beta.
         let max: i8 = match self.transposition_table.get(board.hash()) {
             Some(val) => val + MIN_SCORE - 1,
@@ -45,18 +70,27 @@ impl AlphaBeta {
         let mut b = beta;
         if beta > max {
             b = max;
-            if alpha >= b { return b; }
+            if alpha >= b { 
+                return b; 
+            }
         }
         
         // Run negamax
-        let mut a = alpha;
         for next_board in boards.iter() {
             let s = -self.negamax(next_board, depth - 1, -beta, -a);
-            if s >= b { return s; }
-            if s > a { a = s; }
+            
+            if s >= b { 
+                return s; 
+            }
+            if s > a { 
+                a = s; 
+            }
         }
 
+        // update transposition table
         self.transposition_table.set(board.hash(), a - MIN_SCORE + 1);
+
+        // return alpha
         a
     }
 
@@ -68,7 +102,8 @@ impl AlphaBeta {
 
         // If there is more than one possible none losing move, than we go
         // through the search process
-        if boards.len() > 0 {
+        if !boards.is_empty() {
+            let time = Instant::now();
             // Check if there are any moves that end the game. If so, use that and
             // avoid wasted computation in the search
             for (i, b) in boards.iter().enumerate() {
@@ -88,7 +123,6 @@ impl AlphaBeta {
                 // Evaluate possible moves with iterative deepening search
                 let min = -(I_WIDTH*I_HEIGHT - board.counter)/2;
                 let max = (I_WIDTH*I_HEIGHT + 1 - board.counter)/2;
-
                 
                 // Iterative deepening starting at a reasonable depth
                 for depth in (max_depth/3)..max_depth {
@@ -126,9 +160,15 @@ impl AlphaBeta {
                     }
                 }
 
+                // Log some simple stats formatted for a markdown table
+                let elapsed = time.elapsed();
+                println!("| {} | {:?} | {} |", 
+                    self.nodes_explored, 
+                    elapsed, 
+                    self.nodes_explored as f32  / (1000. * elapsed.as_secs_f32()));
+
                 // Clear transposition table since it is no longer accurate with a 
                 // depth limited approach
-                println!("Explored {} nodes", self.nodes_explored);
                 self.transposition_table.reset();
                 self.nodes_explored = 0;
             }

@@ -29,7 +29,7 @@ impl TransitionTable {
     }
 
     fn index(&self, key: u64) ->  usize {
-        (key as usize % TABLE_MAX_SIZE) as usize
+        key as usize % TABLE_MAX_SIZE
     }
 
     pub fn get(&self, key: u64) -> Option<i8> {
