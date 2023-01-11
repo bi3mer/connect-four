@@ -29,14 +29,6 @@ impl AlphaBeta {
         // Get boards where the next move is not an immediate loss and if there
         // are no boards than return a negative evaluation
         let boards = board.get_next_non_losing_boards();
-        // let boards = if board.is_white_turn() { 
-        //     board.get_next_boards()
-        // } else  { 
-        //     board.get_next_non_losing_boards()
-        // };
-        
-        // If there is no possible move, return a lower bound score since we 
-        // are losing.
         if boards[0].is_none() {
             return -(I_WIDTH*I_HEIGHT - board.counter)/2
         }
@@ -66,7 +58,7 @@ impl AlphaBeta {
                 return b; 
             }
         }
-        
+
         // Run negamax
         for next_board in boards.iter().flatten() {
             let s = -self.negamax(next_board, depth - 1, -beta, -a);
@@ -119,7 +111,7 @@ impl AlphaBeta {
                 let min = -(I_WIDTH*I_HEIGHT - board.counter)/2;
                 let max = (I_WIDTH*I_HEIGHT + 1 - board.counter)/2;
                 
-                // Iterative deepening starting at a reasonable depth
+                // Iterative deepening, starting at a reasonable depth
                 for depth in (max_depth/3)..max_depth {
                     scores.clear();
                     for b in boards.iter().flatten() {
@@ -173,8 +165,7 @@ impl AlphaBeta {
         } else {
             // Else there isn't a non-losing, and we select a random board to 
             // keep the game going
-            let mut any_board = board.get_next_boards();
-            std::mem::swap(board, &mut (any_board[0]));
+            std::mem::swap(board, &mut board.get_next_boards()[0]);
         }
     }
 }

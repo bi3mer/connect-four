@@ -4,7 +4,7 @@ pub const S_WIDTH: usize = 7;
 pub const S_HEIGHT: usize = 6;
 
 pub const U_WIDTH: u8 = 7;
-// pub const U_HEIGHT: u8 = 6;
+pub const U_HEIGHT: u8 = 6;
 
 pub const F_WIDTH: f32 = 7.0;
 pub const F_HEIGHT: f32 = 6.0;
@@ -79,10 +79,28 @@ impl Board {
         for column in COLUMN_ORDER {
             let mut new_board = *self;
             let new_board_is_valid = new_board.make_move(column);
+            // if new_board_is_valid && new_board.opponent_winning_moves() == 0 {
+            //     boards[i] = Some(new_board);
+            //     i += 1;
+            // }
+
             if new_board_is_valid && !new_board.loses_next_turn() {
                 boards[i] = Some(new_board);
                 i += 1;
+
+                let old = !new_board.loses_next_turn();
+                let new = new_board.opponent_winning_moves() == 0;
+                if old != new {
+                    println!("=================================================\n\n");
+                    self.print_self();
+                    new_board.print_self();
+                    println!("old: {:?}", old);
+                    println!("new: {:?}", new);
+                    println!("{:b}", new_board.opponent_winning_moves());
+                    panic!();
+                }
             }
+
         }
 
         boards
@@ -143,6 +161,57 @@ impl Board {
         self.counter == 42 // U_WIDTH * U_HEIGHT = 6 * 7 = 42
     }
 
+    pub fn hash(&self) -> u64 {
+        let index = (self.counter & 1) as usize;
+        let index_2 = ((self.counter+1) & 1) as usize;
+        self.bit_board[index] + (self.bit_board[index] | self.bit_board[index_2])
+    }
+
+    pub fn winning_moves(&self) -> u64 {
+        let index = (self.counter & 1) as usize;
+        let index_2 = ((self.counter+1) & 1) as usize;
+        self.compute_winning_positions(self.bit_board[index], self.bit_board[index_2])
+    }
+
+    pub fn opponent_winning_moves(&self) -> u64 {
+        let index = (self.counter & 1) as usize;
+        let index_2 = ((self.counter+1) & 1) as usize;
+        self.compute_winning_positions(self.bit_board[index_2], self.bit_board[index])
+    }
+
+    // Based on:
+    // https://github.com/PascalPons/connect4/blob/7ed79f6e6315c0f95ee35194520dd615eddbd27d/position.hpp#L272
+    fn compute_winning_positions(&self, bit_board: u64, bit_board_opponent: u64) -> u64 {
+        // vertical
+        let mut r = (bit_board << 1) & (bit_board << 2) & (bit_board << 3);
+
+        //horizontal
+        let mut p = (bit_board << (U_HEIGHT+1)) & (bit_board << 2*(U_HEIGHT+1));
+        r |= p & (bit_board << 3*(U_HEIGHT+1));
+        r |= p & (bit_board >> (U_HEIGHT+1));
+        p = (bit_board >> (U_HEIGHT+1)) & (bit_board >> 2*(U_HEIGHT+1));
+        r |= p & (bit_board << (U_HEIGHT+1));
+        r |= p & (bit_board >> 3*(U_HEIGHT+1));
+
+        //diagonal 1
+        p = (bit_board << U_HEIGHT) & (bit_board << 2*U_HEIGHT);
+        r |= p & (bit_board << 3*U_HEIGHT);
+        r |= p & (bit_board >> U_HEIGHT);
+        p = (bit_board >> U_HEIGHT) & (bit_board >> 2*U_HEIGHT);
+        r |= p & (bit_board << U_HEIGHT);
+        r |= p & (bit_board >> 3*U_HEIGHT);
+
+        //diagonal 2
+        p = (bit_board << (U_HEIGHT+2)) & (bit_board << 2*(U_HEIGHT+2));
+        r |= p & (bit_board << 3*(U_HEIGHT+2));
+        r |= p & (bit_board >> (U_HEIGHT+2));
+        p = (bit_board >> (U_HEIGHT+2)) & (bit_board >> 2*(U_HEIGHT+2));
+        r |= p & (bit_board << (U_HEIGHT+2));
+        r |= p & (bit_board >> 3*(U_HEIGHT+2));
+
+        r & !bit_board_opponent
+    }
+
     // refer to board above for the for magic numbers to make sense
     pub fn get_cells(&self) -> [Cell; S_WIDTH*S_HEIGHT] {
         let mut board = [Cell::Empty; S_WIDTH*S_HEIGHT];
@@ -162,9 +231,22 @@ impl Board {
         board
     }
 
-    pub fn hash(&self) -> u64 {
-        let index = (self.counter & 1) as usize;
-        let index_2 = ((self.counter+1) & 1) as usize;
-        self.bit_board[index] + (self.bit_board[index] | self.bit_board[index_2])
+    // used for debugging
+    #[warn(dead_code)]
+    pub fn print_self(&self) {
+        println!("\n!!!!!!!");
+        for (i, cell) in self.get_cells().iter().enumerate() {
+            if i != 0 && i % S_WIDTH == 0 {
+                println!();
+            }
+
+            match cell {
+                Cell::Empty => { print!("-"); },
+                Cell::White => { print!("X"); },
+                Cell::Red =>   { print!("O"); }
+            }
+        }
+
+        println!("\n!!!!!!!\n\n");
     }
 }
