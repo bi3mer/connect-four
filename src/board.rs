@@ -54,22 +54,6 @@ impl Board {
         self.counter = 0;
     }
 
-    pub fn wins_next_turn(&mut self) -> bool {
-        let index = (self.counter & 1) as usize;
-        for column in COLUMN_ORDER {
-            if self.make_move(column) {
-                let game_over = self.is_game_over(self.bit_board[index]);
-                self.undo_move(column);
-
-                if game_over {
-                    return true;
-                }
-            }
-        }
-
-        false
-    }
-
     // Return all possible next boards but will not return boards where
     // the next move can result in a guaranteed loss.
     //
@@ -120,13 +104,6 @@ impl Board {
         self.counter += 1;
         
         true
-    }
-
-    pub fn undo_move(&mut self, col: usize) {
-        self.counter -= 1;
-        self.height[col] -= 1;
-        let move_pos = 1_u64 << self.height[col];
-        self.bit_board[(self.counter & 1) as usize] ^= move_pos;
     }
 
     // https://github.com/denkspuren/BitboardC4/blob/master/BitboardDesign.md#are-there-four-in-a-row
@@ -206,10 +183,10 @@ impl Board {
         let mut r = (bit_board << 1) & (bit_board << 2) & (bit_board << 3);
 
         //horizontal
-        let mut p = (bit_board << U_WIDTH) & (bit_board << 2*U_WIDTH);
+        let mut p = (bit_board << U_WIDTH) & (bit_board << (2*U_WIDTH));
         r |= p & (bit_board << 3*(U_WIDTH));
         r |= p & (bit_board >> U_WIDTH);
-        p = (bit_board >> U_WIDTH) & (bit_board >> 2*U_WIDTH);
+        p = (bit_board >> U_WIDTH) & (bit_board >> (2*U_WIDTH));
         r |= p & (bit_board << U_WIDTH);
         r |= p & (bit_board >> 3*U_WIDTH);
 
@@ -219,7 +196,7 @@ impl Board {
         r |= p & (bit_board >> (U_WIDTH-1));
         p = (bit_board >> (U_WIDTH-1)) & (bit_board >> 2*(U_WIDTH-1));
         r |= p & (bit_board << (U_WIDTH-1));
-        r |= p & (bit_board >> 3*(U_WIDTH-1));
+        r |= p & (bit_board >> (3*(U_WIDTH-1)));
 
         //diagonal 2 /
         p = (bit_board << (U_WIDTH+1)) & (bit_board << 2*(U_WIDTH+1));
@@ -227,7 +204,7 @@ impl Board {
         r |= p & (bit_board >> (U_WIDTH+1));
         p = (bit_board >> (U_WIDTH+1)) & (bit_board >> 2*(U_WIDTH+1));
         r |= p & (bit_board << (U_WIDTH+1));
-        r |= p & (bit_board >> 3*(U_WIDTH+1));
+        r |= p & (bit_board >> (3*(U_WIDTH+1)));
 
         r & !(bit_board | bit_board_opponent)
     }
