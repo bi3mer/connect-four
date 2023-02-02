@@ -54,7 +54,7 @@ impl Board {
         self.counter = 0;
     }
 
-    fn loses_next_turn(&mut self) -> bool {
+    pub fn wins_next_turn(&mut self) -> bool {
         let index = (self.counter & 1) as usize;
         for column in COLUMN_ORDER {
             if self.make_move(column) {
@@ -72,35 +72,28 @@ impl Board {
 
     // Return all possible next boards but will not return boards where
     // the next move can result in a guaranteed loss.
+    //
+    // @NOTE: pretty sure moves can be outside the for loop and use
+    // self.winning_moves();
     pub fn get_next_non_losing_boards(&self) -> [Option<Board>; S_WIDTH] {
         let mut boards = [None; S_WIDTH];
         let mut i = 0;
-
-        for column in COLUMN_ORDER {
+        
+        for col in COLUMN_ORDER {
             let mut new_board = *self;
-            let new_board_is_valid = new_board.make_move(column);
-            // if new_board_is_valid && new_board.opponent_winning_moves() == 0 {
-            //     boards[i] = Some(new_board);
-            //     i += 1;
-            // }
-
-            if new_board_is_valid && !new_board.loses_next_turn() {
-                boards[i] = Some(new_board);
-                i += 1;
-
-                let old = !new_board.loses_next_turn();
-                let new = new_board.opponent_winning_moves() == 0;
-                if old != new {
-                    println!("=================================================\n\n");
-                    self.print_self();
-                    new_board.print_self();
-                    println!("old: {:?}", old);
-                    println!("new: {:?}", new);
-                    println!("{:b}", new_board.opponent_winning_moves());
-                    panic!();
-                }
+            let new_board_is_valid = new_board.make_move(col);
+            
+            let old = new_board.wins_next_turn();
+            let new = new_board.winning_moves() != 0;
+            if old != new {
+                new_board.print_self();
+                assert_eq!(old, new);
             }
 
+            if new_board_is_valid && new_board.winning_moves() == 0 {
+                boards[i] = Some(new_board);
+                i += 1;
+            }
         }
 
         boards
@@ -125,7 +118,7 @@ impl Board {
 
     pub fn make_move(&mut self, col: usize) -> bool {
         let h = self.height[col];
-        if h >= 6 + (col as u8) * U_WIDTH {
+        if h >= U_HEIGHT + (col as u8) * U_WIDTH {
             return false;
         }
 
@@ -140,7 +133,7 @@ impl Board {
     pub fn undo_move(&mut self, col: usize) {
         self.counter -= 1;
         self.height[col] -= 1;
-        let move_pos = 1_u64 << (self.height[col] as i64);
+        let move_pos = 1_u64 << self.height[col];
         self.bit_board[(self.counter & 1) as usize] ^= move_pos;
     }
 
@@ -167,17 +160,50 @@ impl Board {
         self.bit_board[index] + (self.bit_board[index] | self.bit_board[index_2])
     }
 
+    #[allow(dead_code)]
+    fn moves(&self) -> u64 {
+        let mut mask: u64 = 0;
+        for (col, h )in self.height.iter().enumerate() {
+            if *h < 6 + (col as u8) * U_WIDTH {
+                mask ^= (1_u64) << h;
+            }
+        }
+
+        mask
+    }
+
+    pub fn possible(&self) -> u64 {
+        let mut p = 0;
+        for h in self.height {
+            p ^= (1_u64) << h;
+        }
+
+        p
+    }
+
     pub fn winning_moves(&self) -> u64 {
         let index = (self.counter & 1) as usize;
         let index_2 = ((self.counter+1) & 1) as usize;
-        self.compute_winning_positions(self.bit_board[index], self.bit_board[index_2])
+        let moves = self.compute_winning_positions(
+            self.bit_board[index], 
+            self.bit_board[index_2]
+        );
+        
+        moves & self.possible()
     }
-
-    pub fn opponent_winning_moves(&self) -> u64 {
-        let index = (self.counter & 1) as usize;
-        let index_2 = ((self.counter+1) & 1) as usize;
-        self.compute_winning_positions(self.bit_board[index_2], self.bit_board[index])
-    }
+    
+    /* 
+    https://github.com/denkspuren/BitboardC4/blob/master/BitboardDesign.md
+    6 13 20 27 34 41 48   55 62     Additional row
+    +---------------------+ 
+    | 5 12 19 26 33 40 47 | 54 61     top row
+    | 4 11 18 25 32 39 46 | 53 60
+    | 3 10 17 24 31 38 45 | 52 59
+    | 2  9 16 23 30 37 44 | 51 58
+    | 1  8 15 22 29 36 43 | 50 57
+    | 0  7 14 21 28 35 42 | 49 56 63  bottom row
+    +---------------------+
+    */
 
     // Based on:
     // https://github.com/PascalPons/connect4/blob/7ed79f6e6315c0f95ee35194520dd615eddbd27d/position.hpp#L272
@@ -186,30 +212,30 @@ impl Board {
         let mut r = (bit_board << 1) & (bit_board << 2) & (bit_board << 3);
 
         //horizontal
-        let mut p = (bit_board << (U_HEIGHT+1)) & (bit_board << 2*(U_HEIGHT+1));
-        r |= p & (bit_board << 3*(U_HEIGHT+1));
-        r |= p & (bit_board >> (U_HEIGHT+1));
-        p = (bit_board >> (U_HEIGHT+1)) & (bit_board >> 2*(U_HEIGHT+1));
-        r |= p & (bit_board << (U_HEIGHT+1));
-        r |= p & (bit_board >> 3*(U_HEIGHT+1));
+        let mut p = (bit_board << U_WIDTH) & (bit_board << 2*U_WIDTH);
+        r |= p & (bit_board << 3*(U_WIDTH));
+        r |= p & (bit_board >> U_WIDTH);
+        p = (bit_board >> U_WIDTH) & (bit_board >> 2*U_WIDTH);
+        r |= p & (bit_board << U_WIDTH);
+        r |= p & (bit_board >> 3*U_WIDTH);
 
-        //diagonal 1
-        p = (bit_board << U_HEIGHT) & (bit_board << 2*U_HEIGHT);
-        r |= p & (bit_board << 3*U_HEIGHT);
-        r |= p & (bit_board >> U_HEIGHT);
-        p = (bit_board >> U_HEIGHT) & (bit_board >> 2*U_HEIGHT);
-        r |= p & (bit_board << U_HEIGHT);
-        r |= p & (bit_board >> 3*U_HEIGHT);
+        //diagonal 1 \
+        p = (bit_board << (U_WIDTH-1)) & (bit_board << 2*(U_WIDTH-1));
+        r |= p & (bit_board << 3*(U_WIDTH-1));
+        r |= p & (bit_board >> (U_WIDTH-1));
+        p = (bit_board >> (U_WIDTH-1)) & (bit_board >> 2*(U_WIDTH-1));
+        r |= p & (bit_board << (U_WIDTH-1));
+        r |= p & (bit_board >> 3*(U_WIDTH-1));
 
-        //diagonal 2
-        p = (bit_board << (U_HEIGHT+2)) & (bit_board << 2*(U_HEIGHT+2));
-        r |= p & (bit_board << 3*(U_HEIGHT+2));
-        r |= p & (bit_board >> (U_HEIGHT+2));
-        p = (bit_board >> (U_HEIGHT+2)) & (bit_board >> 2*(U_HEIGHT+2));
-        r |= p & (bit_board << (U_HEIGHT+2));
-        r |= p & (bit_board >> 3*(U_HEIGHT+2));
+        //diagonal 2 /
+        p = (bit_board << (U_WIDTH+1)) & (bit_board << 2*(U_WIDTH+1));
+        r |= p & (bit_board << 3*(U_WIDTH+1));
+        r |= p & (bit_board >> (U_WIDTH+1));
+        p = (bit_board >> (U_WIDTH+1)) & (bit_board >> 2*(U_WIDTH+1));
+        r |= p & (bit_board << (U_WIDTH+1));
+        r |= p & (bit_board >> 3*(U_WIDTH+1));
 
-        r & !bit_board_opponent
+        r & !(bit_board | bit_board_opponent)
     }
 
     // refer to board above for the for magic numbers to make sense
@@ -232,9 +258,8 @@ impl Board {
     }
 
     // used for debugging
-    #[warn(dead_code)]
+    #[allow(dead_code)]
     pub fn print_self(&self) {
-        println!("\n!!!!!!!");
         for (i, cell) in self.get_cells().iter().enumerate() {
             if i != 0 && i % S_WIDTH == 0 {
                 println!();
@@ -246,7 +271,85 @@ impl Board {
                 Cell::Red =>   { print!("O"); }
             }
         }
+        println!("\n");
+    }
+}
 
-        println!("\n!!!!!!!\n\n");
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_horizontal() {
+        let mut b = Board::new();
+        b.make_move(0); assert!(b.winning_moves() == 0);
+        b.make_move(0); assert!(b.winning_moves() == 0);
+        b.make_move(1); assert!(b.winning_moves() == 0);
+        b.make_move(1); assert!(b.winning_moves() == 0);
+        b.make_move(2); assert!(b.winning_moves() == 0);
+        b.make_move(2); assert!(b.winning_moves() != 0); // X can win
+        b.make_move(4); assert!(b.winning_moves() == 0);
+        b.make_move(3); assert!(b.winning_moves() == 0);
+        b.make_move(5); assert!(b.winning_moves() != 0); // O can win
+
+        b = Board::new();
+        b.make_move(1); assert!(b.winning_moves() == 0);
+        b.make_move(1); assert!(b.winning_moves() == 0);
+        b.make_move(2); assert!(b.winning_moves() == 0);
+        b.make_move(2); assert!(b.winning_moves() == 0);
+        b.make_move(4); assert!(b.winning_moves() == 0);
+        b.make_move(4); assert!(b.winning_moves() != 0);
+    }
+
+    #[test]
+    fn test_vertical() {
+        let mut b = Board::new();
+        b.make_move(0); assert!(b.winning_moves() == 0);
+        b.make_move(1); assert!(b.winning_moves() == 0);
+        b.make_move(0); assert!(b.winning_moves() == 0);
+        b.make_move(1); assert!(b.winning_moves() == 0);
+        b.make_move(0); b.print_self(); assert!(b.winning_moves() == 0);
+        b.make_move(1); assert!(b.winning_moves() != 0);
+        b.make_move(3); assert!(b.winning_moves() != 0);
+    }
+
+    #[test]
+    fn test_diagonal_down_right() {
+        let mut b = Board::new();
+        b.make_move(0); assert!(b.winning_moves() == 0);
+        b.make_move(0); assert!(b.winning_moves() == 0);
+        b.make_move(0); assert!(b.winning_moves() == 0);
+        b.make_move(0); assert!(b.winning_moves() == 0);
+        b.make_move(1); assert!(b.winning_moves() == 0);
+        b.make_move(2); assert!(b.winning_moves() == 0);
+        b.make_move(1); assert!(b.winning_moves() == 0);
+        b.make_move(2); assert!(b.winning_moves() == 0);
+        b.make_move(5); assert!(b.winning_moves() == 0);
+        b.make_move(1); assert!(b.winning_moves() == 0);
+        b.make_move(6); assert!(b.winning_moves() != 0);
+        b.make_move(0); assert!(b.winning_moves() == 0);
+        b.make_move(6); assert!(b.winning_moves() != 0);
+        b.make_move(5); assert!(b.winning_moves() == 0);
+        b.make_move(3); assert!(b.winning_moves() == 0);
+    }
+
+    #[test]
+    fn test_diagonal_down_left() {
+        let mut b = Board::new();
+        b.make_move(0); assert!(b.winning_moves() == 0);
+        b.make_move(1); assert!(b.winning_moves() == 0);
+        b.make_move(1); assert!(b.winning_moves() == 0);
+        b.make_move(2); assert!(b.winning_moves() == 0);
+        b.make_move(3); assert!(b.winning_moves() == 0);
+        b.make_move(2); assert!(b.winning_moves() == 0);
+        b.make_move(3); assert!(b.winning_moves() == 0);
+        b.make_move(3); b.print_self(); assert!(b.winning_moves() == 0);
+        b.make_move(2); b.print_self(); assert!(b.winning_moves() == 0); 
+        b.make_move(4); b.print_self(); assert!(b.winning_moves() != 0); // X can win
+        b.make_move(4); b.print_self(); assert!(b.winning_moves() == 0); 
+        b.make_move(4); b.print_self(); assert!(b.winning_moves() != 0); // X can win
+        b.make_move(0); b.print_self(); assert!(b.winning_moves() != 0); // O can win
+        b.make_move(3); b.print_self(); assert!(b.winning_moves() == 0); // O blocked X
+        b.make_move(4); b.print_self(); assert!(b.winning_moves() == 0); // X blocked O
     }
 }

@@ -76,7 +76,7 @@ impl Scene for GameScene {
                 // player input to make a move on the board
                 if is_mouse_button_released(MouseButton::Left) {
                     self.board.make_move(col_index);
-                    self.board.print_self();
+                    // self.board.print_self();
                     if self.board.is_game_over(self.board.bit_board[0]) {
                         self.state = State::WhiteWon;
                     } else if self.board.is_draw() {
