@@ -82,14 +82,6 @@ impl Board {
         for col in COLUMN_ORDER {
             let mut new_board = *self;
             let new_board_is_valid = new_board.make_move(col);
-            
-            let old = new_board.wins_next_turn();
-            let new = new_board.winning_moves() != 0;
-            if old != new {
-                new_board.print_self();
-                assert_eq!(old, new);
-            }
-
             if new_board_is_valid && new_board.winning_moves() == 0 {
                 boards[i] = Some(new_board);
                 i += 1;
@@ -174,8 +166,10 @@ impl Board {
 
     pub fn possible(&self) -> u64 {
         let mut p = 0;
-        for h in self.height {
-            p ^= (1_u64) << h;
+        for (col, h) in self.height.iter().enumerate() {
+            if *h < U_HEIGHT + (col as u8) * U_WIDTH {
+                p ^= (1_u64) << h;
+            }
         }
 
         p
