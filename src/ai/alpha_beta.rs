@@ -1,7 +1,5 @@
-use rand::rngs::SmallRng;
-use rand::SeedableRng;
-use rand::Rng;
 use std::time::Instant;
+use macroquad::rand;
 
 use crate::board::Board;
 use crate::AIType;
@@ -103,7 +101,6 @@ impl AlphaBeta {
 
             // Otherwise, go through the search process
             if !game_ending_move_found {
-                let mut rng = SmallRng::from_entropy();
                 let mut best_score = -(I_WIDTH*I_HEIGHT);
                 let mut scores = Vec::new();
 
@@ -128,7 +125,7 @@ impl AlphaBeta {
                 if *ai_type == AIType::Easy || *ai_type == AIType::Medium {
                     // Choose move probabilistically 
                     let sum = scores.iter().sum::<i8>() as f32;
-                    let rand = rng.gen::<f32>();
+                    let rand = rand::RandomRange::gen_range(0., 1.);
                     let mut current_probability = 0.;
                     for (i, s) in scores.iter().enumerate() {
                         current_probability += (*s as f32) / sum;
