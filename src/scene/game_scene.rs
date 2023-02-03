@@ -90,7 +90,7 @@ impl Scene for GameScene {
                    Beginner => ai::random::make_move(&mut self.board),
                    Easy => self.alpha_beta.make_move(&mut self.board, 4, ai),
                    Medium => self.alpha_beta.make_move(&mut self.board, 10, ai),
-                   Hard => self.alpha_beta.make_move(&mut self.board, 10, ai),
+                   Hard => self.alpha_beta.make_move(&mut self.board, 17, ai),
                    Impossible => self.alpha_beta.make_move(&mut self.board, 30, ai),
                 }
 
