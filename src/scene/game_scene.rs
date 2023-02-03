@@ -59,7 +59,6 @@ impl Scene for GameScene {
         let board_height = d * F_WIDTH;
         let offset_width = (screen_width() - board_width) / 2.;
         let offset_height = (screen_height() - board_height) / 2.;
-        let max_offset = f32::max(offset_width, offset_height);
 
         if self.state == State::Active {
             let mouse_pos = mouse_position();
@@ -131,7 +130,7 @@ impl Scene for GameScene {
 
         // render buttons to restart or quit
         if Button::new()
-            .pos(screen_width()/2. - d, screen_height() - max_offset/2.)
+            .pos(screen_width()/2. - d, screen_height() - screen_height()*0.1)
             .dimensions(78., 30.)
             .color(WHITE)
             .hover_color(BLUE)
@@ -144,7 +143,7 @@ impl Scene for GameScene {
             self.state = State::Active;
         }
         else if Button::new()
-            .pos(screen_width()/2. + d, screen_height() - max_offset/2.)
+            .pos(screen_width()/2. + d, screen_height() - screen_height()*0.1)
             .dimensions(50., 30.)
             .color(WHITE)
             .hover_color(BLUE)

@@ -1,4 +1,4 @@
-use std::time::Instant;
+// use std::time::Instant;
 use macroquad::rand;
 
 use crate::board::Board;
@@ -85,7 +85,7 @@ impl AlphaBeta {
         // If there is more than one possible none losing move, than we go
         // through the search process
         if boards[0].is_some() {
-            let time = Instant::now();
+            // let time = Instant::now();
 
             // Check if there are any moves that end the game. If so, use that and
             // avoid wasted computation in the search
@@ -145,11 +145,11 @@ impl AlphaBeta {
                 }
 
                 // Log some simple stats formatted for a markdown table
-                let elapsed = time.elapsed();
-                println!("| {} | {:?} | {} |", 
-                    self.nodes_explored, 
-                    elapsed, 
-                    self.nodes_explored as f32  / (1000. * elapsed.as_secs_f32()));
+                // let elapsed = time.elapsed();
+                // println!("| {} | {:?} | {} |", 
+                //     self.nodes_explored, 
+                //     elapsed, 
+                //     self.nodes_explored as f32  / (1000. * elapsed.as_secs_f32()));
 
                 // Clear transposition table since it is no longer accurate with a 
                 // depth limited approach

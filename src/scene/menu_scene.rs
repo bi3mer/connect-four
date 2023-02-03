@@ -1,4 +1,4 @@
-use macroquad::{prelude::{WHITE, RED, GRAY, BLUE}, window::{screen_width, screen_height}, text::draw_text};
+use macroquad::{prelude::{WHITE, RED, GRAY, BLUE}, window::{screen_width, screen_height}, text::{draw_text, get_text_center}};
 use crate::scene::scene_trait::Scene;
 use crate::AIType::{self, *};
 use crate::ui::Button;
@@ -81,13 +81,14 @@ impl Scene for MenuScene {
         let w = screen_width();
         let h = screen_height();
 
-        let button_x = w / 4.3;
-        let button_height = h - (h/3.);
+        let button_x = w / 2.;
+        let button_height = h - (h/3.5);
 
         // draw title
+        let mut center = get_text_center("Connect-Four", None, 60, 1., 0.);
         draw_text(
             "Connect-Four", 
-            screen_width()/3.7, 
+            screen_width()/2. - center.x, 
             screen_height()/3., 
             60., 
             WHITE
@@ -95,12 +96,13 @@ impl Scene for MenuScene {
 
         // draw buttons
         let mut target_scene = Menu;
-        if self.play_button.pos(w/2.3, h/2.).draw() {
+        center = get_text_center(" Play", None, 32, 1., 0.);
+        if self.play_button.pos(w/2. - center.x, h/2. - center.y).draw() {
             target_scene = Game;
         }
 
         if self.beginner_button
-            .pos(button_x, button_height)
+            .pos(button_x-220., button_height)
             .color(if *ai == Beginner { RED } else { GRAY })
             .is_active(*ai != Beginner)
             .draw()
@@ -109,7 +111,7 @@ impl Scene for MenuScene {
         }
 
         if self.easy_button
-            .pos(button_x + 90., button_height)
+            .pos(button_x-125., button_height)
             .color(if *ai == Easy { RED } else { GRAY })
             .is_active(*ai != Easy)
             .draw()
@@ -118,7 +120,7 @@ impl Scene for MenuScene {
         }
 
         if self.medium_button
-            .pos(button_x + 150., button_height)
+            .pos(button_x - 60., button_height)
             .color(if *ai == Medium { RED } else { GRAY })
             .is_active(*ai != Medium)
             .draw() 
@@ -127,7 +129,7 @@ impl Scene for MenuScene {
         }
 
         if self.hard_button
-            .pos(button_x + 230., button_height)
+            .pos(button_x + 25., button_height)
             .color(if *ai == Hard { RED } else { GRAY })
             .is_active(*ai != Hard)
             .draw() 
@@ -135,13 +137,31 @@ impl Scene for MenuScene {
             *ai = Hard;
         }
 
-        if self.impossible_button
-            .pos(button_x + 290., button_height)
-            .color(if *ai == Impossible { RED } else { GRAY })
-            .is_active(*ai != Impossible)
-            .draw() 
-        {
-            *ai = Impossible;
+        if !cfg!(target_arch = "wasm32") {
+            if self.impossible_button
+                .pos(button_x + 100., button_height)
+                .color(if *ai == Impossible { RED } else { GRAY })
+                .is_active(*ai != Impossible)
+                .draw() 
+            {
+                *ai = Impossible;
+            }
+        } else {
+            self.impossible_button
+                .pos(button_x + 100., button_height)
+                .color(GRAY)
+                .is_active(false)
+                .draw(); 
+
+            let text = "Impossible AI disabled for web version.";
+            center = get_text_center(text, None, 15, 1., 0.);
+            draw_text(
+                text, 
+                screen_width()/2. - center.x, 
+                screen_height() - screen_height()*0.1, 
+                15.,
+                WHITE
+            );
         }
 
         target_scene
