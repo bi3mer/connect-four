@@ -1,6 +1,6 @@
 # connect-four
 
-This is an implementation of Connect-Four in rust using macroquad. 
+This is an implementation of Connect-Four in Rust using macroquad. If you don't want to run it locally, you can run it on the [web](https://bi3mer.github.io/connect-four/), but you won't have access to the "impossible" opponent.
 
 ## Useful Commands
 
